@@ -7,11 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkshopManager.Web", "Work
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkshopManager.Model", "WorkshopManager.Model\WorkshopManager.Model.csproj", "{16C3949A-2446-4827-88CC-5D072EACBC90}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkshopManager.DAL", "WorkshopManager.DAL\WorkshopManager.DAL.csproj", "{0D1073E4-D671-4D40-AC60-92EB2E608E45}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkshopManager.DAL", "WorkshopManager.DAL\WorkshopManager.DAL.csproj", "{0D1073E4-D671-4D40-AC60-92EB2E608E45}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkshopManager.Services", "WorkshopManager.Services\WorkshopManager.Services.csproj", "{A18336E4-E697-4B34-8B86-F778640B82EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkshopManager.Services", "WorkshopManager.Services\WorkshopManager.Services.csproj", "{A18336E4-E697-4B34-8B86-F778640B82EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkshopManager.ViewModels", "WorkshopManager.ViewModels\WorkshopManager.ViewModels.csproj", "{2A6CA71F-D132-40A7-95D3-5271D272ECEA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkshopManager.ViewModels", "WorkshopManager.ViewModels\WorkshopManager.ViewModels.csproj", "{2A6CA71F-D132-40A7-95D3-5271D272ECEA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
