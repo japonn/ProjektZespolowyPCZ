@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WorkshopManager.DAL\WorkshopManager.DAL.csproj" />
+    <ProjectReference Include="..\WorkshopManager.Model\WorkshopManager.Model.csproj" />
+    <ProjectReference Include="..\WorkshopManager.Services\WorkshopManager.Services.csproj" />
+    <ProjectReference Include="..\WorkshopManager.ViewModels\WorkshopManager.ViewModels.csproj" />
+  </ItemGroup>
+
+</Project>
