@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WorkshopManager.Model.DataModels;
@@ -25,11 +20,18 @@ namespace WorkshopManager.DAL.EF
         {
             base.OnModelCreating(modelBuilder);
 
-            
-            modelBuilder.Entity<User>().ToTable("AspNetUsers");
-            modelBuilder.Entity<Role>().ToTable("AspNetRoles");
+            // Tabele Identity
+            modelBuilder.Entity<User>()
+                .ToTable("AspNetUsers")
+                .HasDiscriminator<int>("UserType")
+                .HasValue<User>((int)RoleValue.User)
+                .HasValue<Owner>((int)RoleValue.Owner)
+                .HasValue<Client>((int)RoleValue.Client);
 
-           
+            modelBuilder.Entity<Role>()
+                .ToTable("AspNetRoles");
+
+            // Precyzja dla wartości pieniężnych
             modelBuilder.Entity<RepairOrder>()
                 .Property(r => r.EntryEstimatedCost)
                 .HasPrecision(18, 2);
@@ -37,6 +39,13 @@ namespace WorkshopManager.DAL.EF
             modelBuilder.Entity<RepairTask>()
                 .Property(r => r.Cost)
                 .HasPrecision(18, 2);
+
+            // Seed podstawowych ról
+            modelBuilder.Entity<Role>().HasData(
+                new Role((int)RoleValue.User, nameof(RoleValue.User), RoleValue.User),
+                new Role((int)RoleValue.Owner, nameof(RoleValue.Owner), RoleValue.Owner),
+                new Role((int)RoleValue.Client, nameof(RoleValue.Client), RoleValue.Client)
+            );
         }
     }
 }
