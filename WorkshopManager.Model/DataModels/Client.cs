@@ -9,7 +9,6 @@ namespace WorkshopManager.Model.DataModels
 {
     public class Client : User
     {
-
-        IList<RepairOrder> repairOrders { get; set; } = null!;
+        public IList<RepairOrder> RepairOrders { get; set; } = null!;
     }
 }

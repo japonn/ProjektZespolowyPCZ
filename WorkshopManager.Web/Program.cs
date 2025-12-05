@@ -2,10 +2,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WorkshopManager.DAL.EF;
 using WorkshopManager.Model.DataModels;
-using WorkshopManager.Services;
-using System.Net;
-using System.Net.Mail;
-using WorkshopManager.Web.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,7 +72,7 @@ async Task SeedOwnerAccount(IServiceProvider serviceProvider)
     if (string.IsNullOrEmpty(ownerEmail) || string.IsNullOrEmpty(ownerPassword) ||
         string.IsNullOrEmpty(ownerFirstName) || string.IsNullOrEmpty(ownerLastName))
     {
-        throw new Exception("Brak wymaganych zmiennych œrodowiskowych dla Ownera.");
+        throw new Exception("Brak wymaganych zmiennych ï¿½rodowiskowych dla Ownera.");
     }
 
     // Seeding roli Owner
@@ -99,28 +95,7 @@ async Task SeedOwnerAccount(IServiceProvider serviceProvider)
 
     var result = await userManager.CreateAsync(owner, ownerPassword);
     if (!result.Succeeded)
-        throw new Exception("Nie uda³o siê utworzyæ konta Ownera: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+        throw new Exception("Nie udaï¿½o siï¿½ utworzyï¿½ konta Ownera: " + string.Join(", ", result.Errors.Select(e => e.Description)));
 
     await userManager.AddToRoleAsync(owner, RoleValue.Owner.ToString());
-}
-
-// --- Funkcja do testowania SMTP (opcjonalnie) ---
-bool ValidateSmtpCredentials(string smtpHost, int smtpPort, string email, string password)
-{
-    try
-    {
-        using var client = new SmtpClient(smtpHost, smtpPort)
-        {
-            EnableSsl = true,
-            Credentials = new NetworkCredential(email, password),
-            Timeout = 10000
-        };
-
-        client.Send(new MailMessage(email, email, "Test SMTP", "Test po³¹czenia SMTP. " + DateTime.Now));
-        return true;
-    }
-    catch
-    {
-        return false;
-    }
 }

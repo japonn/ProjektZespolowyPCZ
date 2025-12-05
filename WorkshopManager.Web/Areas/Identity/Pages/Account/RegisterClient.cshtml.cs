@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using WorkshopManager.Model.DataModels;
+using WorkshopManager.ViewModels;
 
 
 namespace WorkshopManager.Web.Areas.Identity.Pages.Account
@@ -13,47 +13,28 @@ namespace WorkshopManager.Web.Areas.Identity.Pages.Account
     {
 		private readonly SignInManager<User> _signInManager;
 		private readonly UserManager<User> _userManager;
+		private readonly RoleManager<Role> _roleManager;
 		private readonly IUserStore<User> _userStore;
 		private readonly IUserEmailStore<User> _emailStore;
-		private readonly ILogger<RegisterModel> _logger;
-		private readonly IEmailSender _emailSender;
+		private readonly ILogger<RegisterClientModel> _logger;
 
 		public RegisterClientModel(
 			UserManager<User> userManager,
+			RoleManager<Role> roleManager,
 			IUserStore<User> userStore,
 			SignInManager<User> signInManager,
-			ILogger<RegisterModel> logger,
-			IEmailSender emailSender)
+			ILogger<RegisterClientModel> logger)
 		{
 			_userManager = userManager;
+			_roleManager = roleManager;
 			_userStore = userStore;
 			_emailStore = GetEmailStore();
 			_signInManager = signInManager;
-			_emailSender = emailSender;
 			_logger = logger;
 		}
 
 		[BindProperty]
-		public InputModel Input { get; set; }
-
-		public class InputModel
-		{
-			[Required]
-			[EmailAddress]
-			[Display(Name = "Email")]
-			public string Email { get; set; } = String.Empty;
-
-			[Required]
-			[StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
-			[DataType(DataType.Password)]
-			[Display(Name = "Password")]
-			public string Password { get; set; } = String.Empty;
-
-			[DataType(DataType.Password)]
-			[Display(Name = "Confirm password")]
-			[Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-			public string ConfirmPassword { get; set; } = String.Empty;
-		}
+		public RegisterClientViewModel Input { get; set; } = new RegisterClientViewModel();
         public void OnGet()
         {
 			
@@ -61,33 +42,64 @@ namespace WorkshopManager.Web.Areas.Identity.Pages.Account
 
 		public async Task<IActionResult> OnPostAsync()
 		{
-			if(ModelState.IsValid)
+			if (!ModelState.IsValid)
 			{
-				var client = CreateClient();
-				await _userStore.SetUserNameAsync(client, Input.Email, CancellationToken.None);
-				await _emailStore.SetEmailAsync(client, Input.Email, CancellationToken.None);
-				var result = _userManager.CreateAsync(client, Input.Password).Result;
-
-				if (result.Succeeded)
-				{
-					await _userManager.AddToRoleAsync(client, RoleValue.Client.ToString());
-					await _emailSender.SendEmailAsync(Input.Email, "WorkshopManager registration", "Your account was successfully registered !");
-					await _signInManager.SignInAsync(client, isPersistent: false);
-					return RedirectToAction("Index", "ClientRepair");
-				}
-				foreach (var error in result.Errors)
-				{
-					ModelState.AddModelError(string.Empty, error.Description);
-				}
+				return Page();
 			}
+
+			// Sprawdzenie czy email już istnieje
+			var existingUser = await _userManager.FindByEmailAsync(Input.Email);
+			if (existingUser != null)
+			{
+				ModelState.AddModelError(string.Empty, "Użytkownik z tym adresem email już istnieje.");
+				return Page();
+			}
+
+			// Utworzenie roli Client jeśli nie istnieje
+			if (!await _roleManager.RoleExistsAsync(RoleValue.Client.ToString()))
+			{
+				var clientRole = new Role { Name = RoleValue.Client.ToString() };
+				await _roleManager.CreateAsync(clientRole);
+				_logger.LogInformation("Utworzono rolę Client");
+			}
+
+			// Utworzenie użytkownika
+			var client = CreateClient();
+			client.FirstName = Input.FirstName;
+			client.LastName = Input.LastName;
+			client.PhoneNumber = Input.PhoneNumber;
+
+			await _userStore.SetUserNameAsync(client, Input.Email, CancellationToken.None);
+			await _emailStore.SetEmailAsync(client, Input.Email, CancellationToken.None);
+
+			var result = await _userManager.CreateAsync(client, Input.Password);
+
+			if (result.Succeeded)
+			{
+				_logger.LogInformation("Utworzono konto użytkownika: {Email}", Input.Email);
+
+				// Przypisanie roli Client
+				await _userManager.AddToRoleAsync(client, RoleValue.Client.ToString());
+
+				// Automatyczne zalogowanie
+				await _signInManager.SignInAsync(client, isPersistent: false);
+
+				return RedirectToPage("/ClientPages/Index");
+			}
+
+			foreach (var error in result.Errors)
+			{
+				ModelState.AddModelError(string.Empty, error.Description);
+			}
+
 			return Page();
 		}
 
-		private Client CreateClient()
+		private Model.DataModels.Client CreateClient()
 		{
 			try
 			{
-				return Activator.CreateInstance<Client>();
+				return Activator.CreateInstance<Model.DataModels.Client>();
 			}
 			catch
 			{
