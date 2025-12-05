@@ -82,7 +82,15 @@ async Task SeedOwnerAccount(IServiceProvider serviceProvider)
     // Sprawdzenie czy Owner istnieje
     var existingOwner = await userManager.FindByEmailAsync(ownerEmail);
     if (existingOwner != null)
+    {
+        // Sprawdź czy ma rolę Owner
+        var roles = await userManager.GetRolesAsync(existingOwner);
+        if (!roles.Contains(RoleValue.Owner.ToString()))
+        {
+            await userManager.AddToRoleAsync(existingOwner, RoleValue.Owner.ToString());
+        }
         return;
+    }
 
     // Tworzenie Ownera
     var owner = new Owner

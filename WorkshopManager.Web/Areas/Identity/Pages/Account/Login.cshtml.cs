@@ -80,6 +80,21 @@ namespace WorkshopManager.Web.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+
+                    var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
+                    if (user != null)
+                    {
+                        var roles = await _signInManager.UserManager.GetRolesAsync(user);
+                        if (roles.Contains("Client"))
+                        {
+                            return Redirect("/Client/Index");
+                        }
+                        if (roles.Contains("Owner"))
+                        {
+                            return Redirect("/Owner/Index");
+                        }
+                    }
+
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
