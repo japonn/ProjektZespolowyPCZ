@@ -84,7 +84,7 @@ namespace WorkshopManager.Web.Areas.Identity.Pages.Account
 				// Automatyczne zalogowanie
 				await _signInManager.SignInAsync(client, isPersistent: false);
 
-				return RedirectToPage("/ClientPages/Index");
+				return Redirect("/Client/Index");
 			}
 
 			foreach (var error in result.Errors)

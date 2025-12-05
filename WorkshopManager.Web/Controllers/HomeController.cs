@@ -15,6 +15,17 @@ namespace WorkshopManager.Web.Controllers
 
         public IActionResult Index()
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                if (User.IsInRole("Client"))
+                {
+                    return RedirectToAction("Index", "Client");
+                }
+                if (User.IsInRole("Owner"))
+                {
+                    return RedirectToAction("Index", "Owner");
+                }
+            }
             return View();
         }
 
