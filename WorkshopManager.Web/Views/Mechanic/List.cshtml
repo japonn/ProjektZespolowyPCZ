@@ -1,0 +1,57 @@
+@model IEnumerable<WorkshopManager.ViewModels.MechanicCreateViewModel>
+
+@{
+    ViewData["Title"] = "Lista mechaników";
+}
+
+<div class="container mt-4">
+    <h2>Lista mechaników</h2>
+
+    <a asp-controller="Mechanic"
+       asp-action="Create"
+       class="btn btn-primary mt-3 mb-3">
+        Dodaj mechanika
+    </a>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            Brak mechaników w systemie.
+        </div>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Imię</th>
+                    <th>Nazwisko</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var mech in Model)
+            {
+                <tr>
+                    <td>@mech.FirstName</td>
+                    <td>@mech.LastName</td>
+                    <td>
+                        <a asp-controller="Mechanic"
+                           asp-action="Edit"
+                           asp-route-id="@mech.Id"
+                           class="btn btn-sm btn-warning">
+                            Edytuj
+                        </a>
+                        <a asp-controller="Mechanic"
+                           asp-action="Delete"
+                           asp-route-id="@mech.Id"
+                           class="btn btn-sm btn-danger ms-1">
+                            Usuń
+                        </a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

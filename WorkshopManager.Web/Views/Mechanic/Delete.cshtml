@@ -1,0 +1,20 @@
+@model WorkshopManager.ViewModels.MechanicCreateViewModel
+
+@{
+    ViewData["Title"] = "Usuń mechanika";
+}
+
+<div class="container mt-4">
+    <h2>Czy na pewno chcesz usunąć mechanika?</h2>
+
+    <p>
+        <strong>@Model.FirstName @Model.LastName</strong>
+    </p>
+
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <button type="submit" class="btn btn-danger">Usuń</button>
+        <a asp-action="List" class="btn btn-secondary ms-2">Anuluj</a>
+    </form>
+</div>

@@ -1,14 +1,15 @@
 @model WorkshopManager.ViewModels.MechanicCreateViewModel
 
 @{
-    ViewData["Title"] = "Dodaj mechanika";
+    ViewData["Title"] = "Edytuj mechanika";
 }
 
 <div class="container mt-4">
-    <h2>Dodaj mechanika</h2>
+    <h2>Edytuj mechanika</h2>
 
-    <form method="post" asp-action="Create">
+    <form asp-action="Edit" method="post">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="Id" />
 
         <div class="mb-3">
             <label asp-for="FirstName" class="form-label">Imię</label>
@@ -22,7 +23,8 @@
             <span asp-validation-for="LastName" class="text-danger"></span>
         </div>
 
-        <button type="submit" class="btn btn-primary">Utwórz</button>
+        <button type="submit" class="btn btn-primary">Zapisz</button>
+        <a asp-action="List" class="btn btn-secondary ms-2">Powrót</a>
     </form>
 </div>
 
