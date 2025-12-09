@@ -3,13 +3,13 @@
 }
 
 <div class="text-center my-5">
-    <h1 class="display-4 fw-bold">Witaj w WorkshopManager</h1>
-    <p class="lead">Zarządzaj warsztatem w prosty i bezpieczny sposób. Zaloguj się lub utwórz konto właściciela, aby rozpocząć.</p>
+    <h1 class="display-4 fw-bold">Witaj na stronie warsztatu </h1>
+    <p class="lead">Zaloguj się lub utwórz konto, aby rozpocząć.</p>
     <div class="mt-4">
-        <a asp-area="" asp-controller="Account" asp-action="Login" class="btn btn-primary btn-lg me-2">
+        <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary btn-lg me-2">
             <i class="fas fa-sign-in-alt me-1"></i> Zaloguj się
         </a>
-        <a asp-area="" asp-controller="Account" asp-action="Register" class="btn btn-outline-primary btn-lg">
+        <a asp-area="Identity" asp-page="/Account/RegisterClient" class="btn btn-outline-primary btn-lg">
             <i class="fas fa-user-plus me-1"></i> Zarejestruj się
         </a>
     </div>

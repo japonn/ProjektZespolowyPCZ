@@ -1,0 +1,43 @@
+@using System.Linq
+@model IEnumerable<WorkshopManager.ViewModels.ClientListItemViewModel>
+
+@{
+    ViewData["Title"] = "Lista klientów";
+}
+
+<div class="container mt-4">
+    <h2>Lista klientów</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info mt-3">
+            W systemie nie ma jeszcze żadnych klientów.
+        </div>
+    }
+    else
+    {
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Imię</th>
+                    <th>Nazwisko</th>
+                    <th>Email</th>
+                    <th>Telefon</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var client in Model)
+            {
+                <tr>
+                    <td>@client.FirstName</td>
+                    <td>@client.LastName</td>
+                    <td>@client.Email</td>
+                    <td>@client.PhoneNumber</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+
+    <a asp-action="Index" class="btn btn-secondary mt-3">Powrót do panelu właściciela</a>
+</div>

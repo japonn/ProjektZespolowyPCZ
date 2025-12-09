@@ -9,6 +9,11 @@
                 <div class="card-body text-center">
                     <h1>Jesteś zalogowany jako: Owner</h1>
                     <p class="lead mt-3">Witaj, @User.Identity?.Name!</p>
+                    <a asp-controller="Owner"
+                        asp-action="Clients"
+                        class="btn btn-primary mt-4">
+                        Zobacz listę klientów
+                    </a>
                 </div>
             </div>
         </div>

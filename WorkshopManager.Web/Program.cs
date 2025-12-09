@@ -2,7 +2,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WorkshopManager.DAL.EF;
 using WorkshopManager.Model.DataModels;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using WorkshopManager.Web.Services;
+using WorkshopManager.Web.Settings;
 
+DotNetEnv.Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // Pobranie connection stringa
@@ -20,6 +24,27 @@ builder.Services.AddIdentity<User, Role>(options =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
+builder.Services.Configure<EmailSettings>(options =>
+{
+    options.Host = Environment.GetEnvironmentVariable("EMAIL_HOST") ?? "";
+
+    if (int.TryParse(Environment.GetEnvironmentVariable("EMAIL_PORT"), out var port))
+        options.Port = port;
+    else
+        options.Port = 465;
+
+    if (bool.TryParse(Environment.GetEnvironmentVariable("EMAIL_ENABLESSL"), out var enableSsl))
+        options.EnableSsl = enableSsl;
+    else
+        options.EnableSsl = false;
+
+    options.UserName = Environment.GetEnvironmentVariable("EMAIL_USERNAME") ?? "";
+    options.Password = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") ?? "";
+    options.From     = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
+});
+
+builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 
 // MVC + Razor Pages
 builder.Services.AddControllersWithViews();
@@ -62,8 +87,6 @@ async Task SeedOwnerAccount(IServiceProvider serviceProvider)
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
     
-
-    DotNetEnv.Env.TraversePath().Load();
     var ownerEmail = Environment.GetEnvironmentVariable("OWNER_EMAIL");
     var ownerPassword = Environment.GetEnvironmentVariable("OWNER_PASSWORD");
     var ownerFirstName = Environment.GetEnvironmentVariable("OWNER_FIRSTNAME");
