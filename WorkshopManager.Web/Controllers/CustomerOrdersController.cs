@@ -53,7 +53,22 @@ namespace WorkshopManager.Web.Controllers
             _db.RepairOrders.Add(order);
             _db.SaveChanges();
         
-            return RedirectToAction("Index", "Client");
+            return RedirectToAction("MyOrders");
+
+        }
+
+        // PODGLĄD WYSŁANYCH ZGŁOSZEŃ
+        public IActionResult MyOrders()
+        {
+            var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (uid == null) return Unauthorized();
+            int userId = int.Parse(uid);
+            var orders = _db.RepairOrders
+                .Where(o => o.ClientId == userId)
+                .OrderByDescending(o => o.SubmissionDate)
+                .ToList();
+
+            return View(orders);
         }
 
     }

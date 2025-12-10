@@ -1,0 +1,26 @@
+@model IEnumerable<WorkshopManager.Model.DataModels.RepairOrder>
+
+<h2>Twoje zgłoszenia</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Numer zlecenia</th>
+            <th>Status</th>
+            <th>Data zgłoszenia</th>
+            <th>Opis</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var order in Model)
+        {
+            <tr>
+                <td>@order.Id</td>
+                <td>@order.Status</td>
+                <td>@order.SubmissionDate.ToShortDateString()</td>
+                <td>@order.EntryIssueDescription</td>
+            </tr>
+        }
+    </tbody>
+</table>
