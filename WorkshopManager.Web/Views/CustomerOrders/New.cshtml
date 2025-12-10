@@ -1,0 +1,25 @@
+@model WorkshopManager.ViewModels.RepairOrders.CreateOrderVM
+
+<h2>Zgłoś naprawę pojazdu</h2>
+
+<form asp-action="New" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-group">
+        <label asp-for="IssueDescription"></label>
+        <textarea asp-for="IssueDescription" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="IssueDescription" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PlateNumber"></label>
+        <input asp-for="PlateNumber" class="form-control" />
+        <span asp-validation-for="PlateNumber" class="text-danger"></span>
+    </div>
+
+    <button class="btn btn-primary mt-2">Wyślij zgłoszenie</button>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
