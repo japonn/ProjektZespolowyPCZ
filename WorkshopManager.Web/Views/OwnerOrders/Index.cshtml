@@ -1,0 +1,50 @@
+@model IEnumerable<WorkshopManager.Model.DataModels.RepairOrder>
+
+@{
+    ViewData["Title"] = "Zlecenia klientów";
+}
+
+<h2>Zlecenia klientów</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Numer zlecenia</th>
+            <th>Klient</th>
+            <th>Numer rejestracyjny</th>
+            <th>Status</th>
+            <th>Mechanik</th>
+            <th>Data zgłoszenia</th>
+            <th>Akcje</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model)
+        {
+            <tr>
+                <td>@order.Id</td>
+                <td>@(order.Client.FirstName + " " + order.Client.LastName)</td>
+                <td>@order.RegistrationNumber</td>
+                <td>@order.Status</td>
+                <td>
+                    @if (order.Mechanic != null)
+                    {
+                        @($"{order.Mechanic.FirstName} {order.Mechanic.LastName}")
+                    }
+                    else
+                    {
+                        <span class="text-muted">nieprzydzielone</span>
+                    }
+                </td>
+                <td>@order.SubmissionDate.ToShortDateString()</td>
+                <td>
+                    <a asp-action="Assign"
+                       asp-route-id="@order.Id"
+                       class="btn btn-sm btn-primary">
+                        Przydziel / rozpocznij
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
