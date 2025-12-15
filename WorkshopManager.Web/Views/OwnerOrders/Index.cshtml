@@ -14,6 +14,7 @@
             <th>Numer rejestracyjny</th>
             <th>Status</th>
             <th>Mechanik</th>
+            <th>Kwota brutto</th>
             <th>Data zgłoszenia</th>
             <th>Akcje</th>
         </tr>
@@ -34,6 +35,19 @@
                     else
                     {
                         <span class="text-muted">nieprzydzielone</span>
+                    }
+                </td>
+                <td>
+                    @if (order.EntryEstimatedCost.HasValue && order.VatRate.HasValue)
+                    {
+                        var netto = order.EntryEstimatedCost.Value;
+                        var vat = (netto * order.VatRate.Value) / 100;
+                        var brutto = netto + vat;
+                        <span>@brutto.ToString("N2") PLN</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">brak wyceny</span>
                     }
                 </td>
                 <td>@order.SubmissionDate.ToShortDateString()</td>

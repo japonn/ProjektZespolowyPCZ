@@ -55,6 +55,8 @@ namespace WorkshopManager.Web.Controllers
                 RegistrationNumber = order.RegistrationNumber,
                 IssueDescription = order.EntryIssueDescription,
                 Status = order.Status,
+                EstimatedCost = order.EntryEstimatedCost,
+                VatRate = order.VatRate,
                 Mechanics = mechanics
                     .Select(m => new MechanicListItemVM
                     {
@@ -101,6 +103,10 @@ namespace WorkshopManager.Web.Controllers
 
             // przypisanie mechanika
             order.MechanicId = model.SelectedMechanicId;
+
+            // zapisanie wyceny
+            order.EntryEstimatedCost = model.EstimatedCost;
+            order.VatRate = model.VatRate;
 
             // rozpoczęcie naprawy – ustawiamy status i datę startu
             if (order.Status == RepairOrderStatusValue.PendingEstimate)

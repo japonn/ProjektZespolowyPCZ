@@ -23,6 +23,15 @@ namespace WorkshopManager.ViewModels.RepairOrders
         [Display(Name = "Status zlecenia")]
         public RepairOrderStatusValue Status { get; set; }
 
+        [Display(Name = "Szacowany koszt naprawy (netto)")]
+        [Required(ErrorMessage = "Wycena jest wymagana.")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Kwota musi być większa niż 0.")]
+        public decimal? EstimatedCost { get; set; }
+
+        [Display(Name = "Stawka VAT")]
+        [Required(ErrorMessage = "Wybierz stawkę VAT.")]
+        public int? VatRate { get; set; }
+
         public IList<MechanicListItemVM> Mechanics { get; set; } = new List<MechanicListItemVM>();
     }
 
