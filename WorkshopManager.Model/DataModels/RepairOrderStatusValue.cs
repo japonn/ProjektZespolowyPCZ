@@ -8,10 +8,12 @@ namespace WorkshopManager.Model.DataModels
 {
 	public enum RepairOrderStatusValue
 	{
-        PendingEstimate = 0,   // oczekiwanie na wycenę (przez wlasciciela)
-        ClientApproval = 1, // wyceniony(przez wlasciciela), niezaakceptowane przez klienta (oczekuje na ackeptacje)
-        Accepted = 2,   // zaakcpetowane przez klienta 
-        InProgress = 3,
-        Completed = 4,
+        Created = 0,              // Utworzone - zlecenie utworzone przez klienta
+        PendingApproval = 1,      // Do akceptacji - przydzielony mechanik i wycena wysłana do klienta
+        Approved = 2,             // Wycena zaakceptowana - wycena została zaakceptowana przez klienta
+        InProgress = 3,           // W realizacji - mechanik rozpoczął realizację zlecenia
+        ReadyForPickup = 4,       // Gotowy do odbioru - zlecenie wykonane, czeka na odbiór klienta
+        Completed = 5,            // Zakończone - klient odebrał zlecenie
+        Cancelled = 6             // Anulowane - zlecenie jest anulowane
     }
 }

@@ -1,26 +1,49 @@
 @model IEnumerable<WorkshopManager.Model.DataModels.RepairOrder>
+@using WorkshopManager.Web.Helpers
+
+@{
+    ViewData["Title"] = "Moje zlecenia";
+}
 
 <h2>Twoje zgłoszenia</h2>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Numer zlecenia</th>
-            <th>Status</th>
-            <th>Data zgłoszenia</th>
-            <th>Opis</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        @foreach (var order in Model)
-        {
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        Nie masz jeszcze żadnych zleceń. <a asp-action="New" class="alert-link">Dodaj nowe zgłoszenie</a>
+    </div>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
             <tr>
-                <td>@order.Id</td>
-                <td>@order.Status</td>
-                <td>@order.SubmissionDate.ToShortDateString()</td>
-                <td>@order.EntryIssueDescription</td>
+                <th>Numer</th>
+                <th>Status</th>
+                <th>Data zgłoszenia</th>
+                <th>Numer rejestracyjny</th>
+                <th>Opis</th>
+                <th>Akcje</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+
+        <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.Id</td>
+                    <td>@Html.Raw(StatusHelper.GetStatusBadgeHtml(order.Status))</td>
+                    <td>@order.SubmissionDate.ToString("dd.MM.yyyy")</td>
+                    <td>@order.RegistrationNumber</td>
+                    <td>@(order.EntryIssueDescription.Length > 50 ? order.EntryIssueDescription.Substring(0, 50) + "..." : order.EntryIssueDescription)</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> Szczegóły
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

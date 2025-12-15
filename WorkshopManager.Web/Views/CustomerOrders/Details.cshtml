@@ -1,0 +1,156 @@
+@model WorkshopManager.Model.DataModels.RepairOrder
+@using WorkshopManager.Web.Helpers
+
+@{
+    ViewData["Title"] = "Szczegóły zlecenia";
+}
+
+<h2>Szczegóły zlecenia #@Model.Id</h2>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">
+            Status: @Html.Raw(StatusHelper.GetStatusBadgeHtml(Model.Status))
+        </h5>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Numer zlecenia</dt>
+            <dd class="col-sm-9">@Model.Id</dd>
+
+            <dt class="col-sm-3">Numer rejestracyjny</dt>
+            <dd class="col-sm-9">@Model.RegistrationNumber</dd>
+
+            <dt class="col-sm-3">Data zgłoszenia</dt>
+            <dd class="col-sm-9">@Model.SubmissionDate.ToString("dd.MM.yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3">Opis usterki</dt>
+            <dd class="col-sm-9">@Model.EntryIssueDescription</dd>
+
+            @if (Model.Mechanic != null)
+            {
+                <dt class="col-sm-3">Przydzielony mechanik</dt>
+                <dd class="col-sm-9">@Model.Mechanic.FirstName @Model.Mechanic.LastName</dd>
+            }
+        </dl>
+    </div>
+</div>
+
+@if (Model.Status == WorkshopManager.Model.DataModels.RepairOrderStatusValue.Created)
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <strong>Oczekiwanie na wycenę</strong><br />
+        Twoje zlecenie zostało przyjęte. Oczekujemy na przydzielenie mechanika i przygotowanie wyceny przez warsztat.
+    </div>
+}
+
+@if (Model.EntryEstimatedCost.HasValue && Model.VatRate.HasValue)
+{
+    var netto = Model.EntryEstimatedCost.Value;
+    var vat = (netto * Model.VatRate.Value) / 100;
+    var brutto = netto + vat;
+
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Wycena naprawy</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Kwota netto:</strong>
+                    <div class="fs-5">@netto.ToString("N2") PLN</div>
+                </div>
+                <div class="col-md-4">
+                    <strong>VAT (@Model.VatRate%):</strong>
+                    <div class="fs-5">@vat.ToString("N2") PLN</div>
+                </div>
+                <div class="col-md-4">
+                    <strong>Kwota brutto:</strong>
+                    <div class="fs-4 text-primary fw-bold">@brutto.ToString("N2") PLN</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Status == WorkshopManager.Model.DataModels.RepairOrderStatusValue.PendingApproval)
+    {
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Wycena oczekuje na Twoją decyzję</strong><br />
+            @if (Model.EntryEstimatedCost.HasValue)
+            {
+                <span>Warsztat przygotował wycenę naprawy. Prosimy o zapoznanie się z nią i podjęcie decyzji o akceptacji lub odrzuceniu.</span>
+            }
+            else
+            {
+                <span>Prosimy o zapoznanie się z wyceną i podjęcie decyzji o akceptacji lub odrzuceniu.</span>
+            }
+        </div>
+
+        <div class="d-flex gap-2 mb-3">
+            <form asp-action="ApproveEstimate" asp-route-id="@Model.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('Czy na pewno chcesz zaakceptować wycenę?')">
+                    <i class="fas fa-check"></i> Akceptuję wycenę
+                </button>
+            </form>
+
+            <form asp-action="RejectEstimate" asp-route-id="@Model.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Czy na pewno chcesz odrzucić wycenę? Zlecenie zostanie anulowane.')">
+                    <i class="fas fa-times"></i> Odrzucam wycenę
+                </button>
+            </form>
+        </div>
+    }
+
+    @if (Model.Status == WorkshopManager.Model.DataModels.RepairOrderStatusValue.Approved)
+    {
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <strong>Wycena zaakceptowana</strong><br />
+            Dzięku jemy za akceptację wyceny. Warsztat rozpocznie realizację zlecenia.
+        </div>
+    }
+
+    @if (Model.Status == WorkshopManager.Model.DataModels.RepairOrderStatusValue.InProgress)
+    {
+        <div class="alert alert-primary">
+            <i class="fas fa-cog fa-spin"></i>
+            <strong>Naprawa w realizacji</strong><br />
+            Twój pojazd jest aktualnie serwisowany przez naszych mechaników.
+        </div>
+    }
+}
+
+@if (Model.Status == WorkshopManager.Model.DataModels.RepairOrderStatusValue.Cancelled)
+{
+    <div class="alert alert-danger">
+        <i class="fas fa-ban"></i>
+        <strong>Zlecenie anulowane</strong><br />
+        Odrzuciłeś wycenę dla tego zlecenia. Warsztat może ponownie przygotować i wysłać nową wycenę, którą będziesz mógł ponownie zaakceptować lub odrzucić.
+    </div>
+}
+
+@if (Model.Status == WorkshopManager.Model.DataModels.RepairOrderStatusValue.ReadyForPickup)
+{
+    <div class="alert alert-success">
+        <i class="fas fa-car"></i>
+        <strong>Gotowy do odbioru</strong><br />
+        Twój pojazd jest gotowy do odbioru. Prosimy o kontakt z warsztatem.
+    </div>
+}
+
+@if (Model.Status == WorkshopManager.Model.DataModels.RepairOrderStatusValue.Completed)
+{
+    <div class="alert alert-dark">
+        <i class="fas fa-flag-checkered"></i>
+        <strong>Zlecenie zakończone</strong><br />
+        Dziękujemy za skorzystanie z naszych usług!
+    </div>
+}
+
+<a asp-action="MyOrders" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Powrót do listy zleceń
+</a>

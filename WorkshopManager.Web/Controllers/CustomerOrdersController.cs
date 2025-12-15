@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using WorkshopManager.DAL.EF;
 using WorkshopManager.Model.DataModels;
@@ -47,7 +48,7 @@ namespace WorkshopManager.Web.Controllers
                 EntryIssueDescription = vm.IssueDescription,
                 RegistrationNumber = vm.PlateNumber,
                 SubmissionDate = DateTime.Now,
-                Status = RepairOrderStatusValue.PendingEstimate
+                Status = RepairOrderStatusValue.Created
             };
         
             _db.RepairOrders.Add(order);
@@ -69,6 +70,79 @@ namespace WorkshopManager.Web.Controllers
                 .ToList();
 
             return View(orders);
+        }
+
+        // SZCZEGÓŁY ZLECENIA
+        public IActionResult Details(int id)
+        {
+            var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (uid == null) return Unauthorized();
+            int userId = int.Parse(uid);
+
+            var order = _db.RepairOrders
+                .Include(o => o.Mechanic)
+                .FirstOrDefault(o => o.Id == id && o.ClientId == userId);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return View(order);
+        }
+
+        // AKCEPTACJA WYCENY
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ApproveEstimate(int id)
+        {
+            var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (uid == null) return Unauthorized();
+            int userId = int.Parse(uid);
+
+            var order = _db.RepairOrders
+                .FirstOrDefault(o => o.Id == id && o.ClientId == userId);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            // Sprawdzenie czy zlecenie jest w stanie "Do akceptacji"
+            if (order.Status == RepairOrderStatusValue.PendingApproval)
+            {
+                order.Status = RepairOrderStatusValue.Approved;
+                _db.SaveChanges();
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // ODRZUCENIE WYCENY
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RejectEstimate(int id)
+        {
+            var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (uid == null) return Unauthorized();
+            int userId = int.Parse(uid);
+
+            var order = _db.RepairOrders
+                .FirstOrDefault(o => o.Id == id && o.ClientId == userId);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            // Sprawdzenie czy zlecenie jest w stanie "Do akceptacji"
+            if (order.Status == RepairOrderStatusValue.PendingApproval)
+            {
+                order.Status = RepairOrderStatusValue.Cancelled;
+                _db.SaveChanges();
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
         }
 
     }

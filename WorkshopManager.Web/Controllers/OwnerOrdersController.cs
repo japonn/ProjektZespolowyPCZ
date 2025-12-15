@@ -101,6 +101,10 @@ namespace WorkshopManager.Web.Controllers
                 return NotFound();
             }
 
+            // Sprawdzenie czy wycena się zmieniła
+            bool estimateChanged = order.EntryEstimatedCost != model.EstimatedCost ||
+                                   order.VatRate != model.VatRate;
+
             // przypisanie mechanika
             order.MechanicId = model.SelectedMechanicId;
 
@@ -108,11 +112,17 @@ namespace WorkshopManager.Web.Controllers
             order.EntryEstimatedCost = model.EstimatedCost;
             order.VatRate = model.VatRate;
 
-            // rozpoczęcie naprawy – ustawiamy status i datę startu
-            if (order.Status == RepairOrderStatusValue.PendingEstimate)
+            // Zmiana statusu na "Do akceptacji" w następujących przypadkach:
+            // 1. Zlecenie jest "Utworzone" - pierwsza wycena
+            // 2. Zlecenie jest "Anulowane" - rewycena po odrzuceniu
+            // 3. Zlecenie jest "Zaakceptowane" ale wycena się zmieniła - rewycena
+            // 4. Zlecenie jest "Do akceptacji" i wycena się zmieniła - aktualizacja wyceny
+            if (order.Status == RepairOrderStatusValue.Created ||
+                order.Status == RepairOrderStatusValue.Cancelled ||
+                (order.Status == RepairOrderStatusValue.Approved && estimateChanged) ||
+                (order.Status == RepairOrderStatusValue.PendingApproval && estimateChanged))
             {
-                order.Status = RepairOrderStatusValue.InProgress;
-                order.StartDate = DateTime.Now; // dla uproszczenia lokalny czas
+                order.Status = RepairOrderStatusValue.PendingApproval;
             }
 
             _db.SaveChanges();

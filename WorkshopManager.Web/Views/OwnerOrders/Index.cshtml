@@ -1,4 +1,5 @@
 @model IEnumerable<WorkshopManager.Model.DataModels.RepairOrder>
+@using WorkshopManager.Web.Helpers
 
 @{
     ViewData["Title"] = "Zlecenia klientów";
@@ -26,7 +27,7 @@
                 <td>@order.Id</td>
                 <td>@(order.Client.FirstName + " " + order.Client.LastName)</td>
                 <td>@order.RegistrationNumber</td>
-                <td>@order.Status</td>
+                <td>@Html.Raw(StatusHelper.GetStatusBadgeHtml(order.Status))</td>
                 <td>
                     @if (order.Mechanic != null)
                     {
