@@ -23,6 +23,7 @@ namespace WorkshopManager.Web.Controllers
             var orders = _db.RepairOrders
                 .Include(o => o.Client)
                 .Include(o => o.Mechanic)
+                .Include(o => o.AdditionalCosts)
                 .OrderByDescending(o => o.SubmissionDate)
                 .ToList();
 
@@ -127,6 +128,86 @@ namespace WorkshopManager.Web.Controllers
 
             _db.SaveChanges();
 
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Formularz dodawania kosztów dodatkowych
+        [HttpGet]
+        public IActionResult AddAdditionalCost(int id)
+        {
+            var order = _db.RepairOrders
+                .Include(o => o.Client)
+                .Include(o => o.AdditionalCosts.OrderBy(ac => ac.AddedDate))
+                .FirstOrDefault(o => o.Id == id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            // Koszty dodatkowe można dodać tylko do zleceń z wycenowaną naprawą
+            if (!order.EntryEstimatedCost.HasValue || !order.VatRate.HasValue)
+            {
+                TempData["Error"] = "Nie można dodać kosztów dodatkowych do zlecenia bez wyceny.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var model = new AddAdditionalCostVM
+            {
+                OrderId = order.Id,
+                ClientFullName = $"{order.Client.FirstName} {order.Client.LastName}",
+                RegistrationNumber = order.RegistrationNumber,
+                IssueDescription = order.EntryIssueDescription,
+                Status = order.Status,
+                OriginalEstimatedCost = order.EntryEstimatedCost,
+                VatRate = order.VatRate
+            };
+
+            ViewBag.ExistingCosts = order.AdditionalCosts;
+
+            return View(model);
+        }
+
+        // Zapis kosztów dodatkowych
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddAdditionalCost(AddAdditionalCostVM model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var order = _db.RepairOrders
+                .FirstOrDefault(o => o.Id == model.OrderId);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            // Utworzenie nowego kosztu dodatkowego
+            var additionalCost = new AdditionalCost
+            {
+                RepairOrderId = order.Id,
+                Cost = model.AdditionalCost!.Value,
+                Description = model.AdditionalCostDescription!,
+                AddedDate = DateTime.Now,
+                IsAccepted = false
+            };
+
+            _db.AdditionalCosts.Add(additionalCost);
+
+            // Jeśli zlecenie było zaakceptowane, wymaga ponownej akceptacji kosztów dodatkowych
+            if (order.Status == RepairOrderStatusValue.Approved ||
+                order.Status == RepairOrderStatusValue.InProgress)
+            {
+                order.Status = RepairOrderStatusValue.PendingApproval;
+            }
+
+            _db.SaveChanges();
+
+            TempData["Success"] = "Koszty dodatkowe zostały dodane. Klient musi je zaakceptować.";
             return RedirectToAction(nameof(Index));
         }
     }

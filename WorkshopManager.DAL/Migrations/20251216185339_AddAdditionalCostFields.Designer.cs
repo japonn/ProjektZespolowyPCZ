@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkshopManager.DAL.EF;
 
@@ -11,9 +12,11 @@ using WorkshopManager.DAL.EF;
 namespace WorkshopManager.DAL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251216185339_AddAdditionalCostFields")]
+    partial class AddAdditionalCostFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -125,41 +128,6 @@ namespace WorkshopManager.DAL.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("WorkshopManager.Model.DataModels.AdditionalCost", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("AcceptedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("AddedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Cost")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsAccepted")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("RepairOrderId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RepairOrderId");
-
-                    b.ToTable("AdditionalCosts");
-                });
-
             modelBuilder.Entity("WorkshopManager.Model.DataModels.Mechanic", b =>
                 {
                     b.Property<int>("Id")
@@ -195,6 +163,16 @@ namespace WorkshopManager.DAL.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("AdditionalCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool?>("AdditionalCostAccepted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("AdditionalCostDescription")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
@@ -471,17 +449,6 @@ namespace WorkshopManager.DAL.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("WorkshopManager.Model.DataModels.AdditionalCost", b =>
-                {
-                    b.HasOne("WorkshopManager.Model.DataModels.RepairOrder", "RepairOrder")
-                        .WithMany("AdditionalCosts")
-                        .HasForeignKey("RepairOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RepairOrder");
-                });
-
             modelBuilder.Entity("WorkshopManager.Model.DataModels.RepairOrder", b =>
                 {
                     b.HasOne("WorkshopManager.Model.DataModels.Client", "Client")
@@ -517,8 +484,6 @@ namespace WorkshopManager.DAL.Migrations
 
             modelBuilder.Entity("WorkshopManager.Model.DataModels.RepairOrder", b =>
                 {
-                    b.Navigation("AdditionalCosts");
-
                     b.Navigation("Tasks");
                 });
 

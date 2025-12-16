@@ -1,0 +1,161 @@
+@model WorkshopManager.ViewModels.RepairOrders.AddAdditionalCostVM
+@using WorkshopManager.Web.Helpers
+
+@{
+    ViewData["Title"] = "Dodaj koszty dodatkowe";
+}
+
+<h2>Dodaj koszty dodatkowe do zlecenia</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Szczegóły zlecenia</h5>
+        <dl class="row">
+            <dt class="col-sm-3">Klient</dt>
+            <dd class="col-sm-9">@Model.ClientFullName</dd>
+
+            <dt class="col-sm-3">Numer rejestracyjny</dt>
+            <dd class="col-sm-9">@Model.RegistrationNumber</dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">@Html.Raw(StatusHelper.GetStatusBadgeHtml(Model.Status))</dd>
+
+            <dt class="col-sm-3">Opis usterki</dt>
+            <dd class="col-sm-9">@Model.IssueDescription</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card mb-3 bg-light">
+    <div class="card-body">
+        <h5 class="card-title">Pierwotna wycena</h5>
+        @if (Model.OriginalEstimatedCost.HasValue && Model.VatRate.HasValue)
+        {
+            var netto = Model.OriginalEstimatedCost.Value;
+            var vat = (netto * Model.VatRate.Value) / 100;
+            var brutto = netto + vat;
+
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Kwota netto:</strong>
+                    <div>@netto.ToString("N2") PLN</div>
+                </div>
+                <div class="col-md-4">
+                    <strong>VAT (@Model.VatRate%):</strong>
+                    <div>@vat.ToString("N2") PLN</div>
+                </div>
+                <div class="col-md-4">
+                    <strong>Kwota brutto:</strong>
+                    <div class="fw-bold text-primary">@brutto.ToString("N2") PLN</div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@{
+    var existingCosts = ViewBag.ExistingCosts as IEnumerable<WorkshopManager.Model.DataModels.AdditionalCost>;
+}
+
+@if (existingCosts != null && existingCosts.Any())
+{
+    <div class="card mb-3 border-warning">
+        <div class="card-header bg-warning bg-opacity-25">
+            <h5 class="mb-0">
+                <i class="fas fa-history"></i> Historia kosztów dodatkowych
+            </h5>
+        </div>
+        <div class="card-body">
+            @foreach (var cost in existingCosts)
+            {
+                <div class="alert alert-secondary mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="mb-1"><strong>@cost.Description</strong></p>
+                            <p class="mb-1"><strong>Kwota (netto):</strong> @cost.Cost.ToString("N2") PLN</p>
+                            <small class="text-muted">Dodano: @cost.AddedDate.ToString("dd.MM.yyyy HH:mm")</small>
+                        </div>
+                        @if (cost.IsAccepted)
+                        {
+                            <span class="badge bg-success">
+                                <i class="fas fa-check"></i> Zaakceptowano
+                                <br />
+                                <small>@cost.AcceptedDate?.ToString("dd.MM.yyyy HH:mm")</small>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-clock"></i> Oczekuje na akceptację
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Model.OriginalEstimatedCost.HasValue && Model.VatRate.HasValue)
+            {
+                var totalExisting = existingCosts.Sum(c => c.Cost);
+                var currentNetto = Model.OriginalEstimatedCost.Value + totalExisting;
+                var currentVat = (currentNetto * Model.VatRate.Value) / 100;
+                var currentBrutto = currentNetto + currentVat;
+
+                <hr />
+                <div class="row">
+                    <div class="col-md-12">
+                        <strong>Aktualna suma z dotychczasowymi kosztami dodatkowymi:</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted">Netto: @currentNetto.ToString("N2") PLN</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted">VAT: @currentVat.ToString("N2") PLN</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="fw-bold text-success">Brutto: @currentBrutto.ToString("N2") PLN</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<form asp-action="AddAdditionalCost" method="post">
+    <input type="hidden" asp-for="OrderId" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-warning">
+            <h5 class="mb-0">Koszty dodatkowe</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label asp-for="AdditionalCost" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="AdditionalCost" type="number" step="0.01" min="0.01" class="form-control" id="additionalCost" />
+                    <span class="input-group-text">PLN</span>
+                </div>
+                <span asp-validation-for="AdditionalCost" class="text-danger"></span>
+                <small class="form-text text-muted">Podaj kwotę netto dodatkowych kosztów</small>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="AdditionalCostDescription" class="form-label"></label>
+                <textarea asp-for="AdditionalCostDescription" class="form-control" rows="3" placeholder="Np. Wymiana nieplanowanych części, dodatkowe naprawy..."></textarea>
+                <span asp-validation-for="AdditionalCostDescription" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-warning btn-lg">
+        <i class="fas fa-plus-circle"></i> Dodaj koszty dodatkowe
+    </button>
+    <a asp-action="Index" class="btn btn-secondary btn-lg">
+        Anuluj
+    </a>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

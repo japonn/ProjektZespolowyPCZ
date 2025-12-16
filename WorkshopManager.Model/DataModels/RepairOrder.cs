@@ -20,6 +20,7 @@ namespace WorkshopManager.Model.DataModels
         public DateTime? EndDate { get; set; }
         public decimal? EntryEstimatedCost { get; set; }
         public int? VatRate { get; set; }
+        public IList<AdditionalCost> AdditionalCosts { get; set; } = new List<AdditionalCost>();
         public string EntryIssueDescription { get; set; } = null!;
         public string RegistrationNumber { get; set; } = null!;
     }

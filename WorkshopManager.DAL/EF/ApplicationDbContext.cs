@@ -10,6 +10,7 @@ namespace WorkshopManager.DAL.EF
         public DbSet<RepairOrder> RepairOrders { get; set; }
         public DbSet<RepairTask> RepairTasks { get; set; }
         public DbSet<Mechanic> Mechanics { get; set; }
+        public DbSet<AdditionalCost> AdditionalCosts { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -39,6 +40,17 @@ namespace WorkshopManager.DAL.EF
             modelBuilder.Entity<RepairTask>()
                 .Property(r => r.Cost)
                 .HasPrecision(18, 2);
+
+            modelBuilder.Entity<AdditionalCost>()
+                .Property(a => a.Cost)
+                .HasPrecision(18, 2);
+
+            // Relacja RepairOrder -> AdditionalCosts
+            modelBuilder.Entity<AdditionalCost>()
+                .HasOne(a => a.RepairOrder)
+                .WithMany(r => r.AdditionalCosts)
+                .HasForeignKey(a => a.RepairOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Seed podstawowych ról
             modelBuilder.Entity<Role>().HasData(

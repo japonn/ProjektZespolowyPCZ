@@ -15,7 +15,8 @@
             <th>Numer rejestracyjny</th>
             <th>Status</th>
             <th>Mechanik</th>
-            <th>Kwota brutto</th>
+            <th>Wycena brutto</th>
+            <th>Kwota do zapłaty</th>
             <th>Data zgłoszenia</th>
             <th>Akcje</th>
         </tr>
@@ -51,13 +52,50 @@
                         <span class="text-muted">brak wyceny</span>
                     }
                 </td>
+                <td>
+                    @if (order.EntryEstimatedCost.HasValue && order.VatRate.HasValue)
+                    {
+                        var netto = order.EntryEstimatedCost.Value;
+                        var totalAdditionalCosts = order.AdditionalCosts?.Sum(ac => ac.Cost) ?? 0;
+                        var totalNetto = netto + totalAdditionalCosts;
+                        var totalVat = (totalNetto * order.VatRate.Value) / 100;
+                        var totalBrutto = totalNetto + totalVat;
+
+                        if (totalAdditionalCosts > 0)
+                        {
+                            <span class="fw-bold text-danger">@totalBrutto.ToString("N2") PLN</span>
+                            <br />
+                            <small class="text-muted">(+@totalAdditionalCosts.ToString("N2") PLN dodatkowe)</small>
+                        }
+                        else
+                        {
+                            <span>@totalBrutto.ToString("N2") PLN</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted">brak wyceny</span>
+                    }
+                </td>
                 <td>@order.SubmissionDate.ToShortDateString()</td>
                 <td>
-                    <a asp-action="Assign"
-                       asp-route-id="@order.Id"
-                       class="btn btn-sm btn-primary">
-                        Przydziel / rozpocznij
-                    </a>
+                    <div class="btn-group" role="group">
+                        <a asp-action="Assign"
+                           asp-route-id="@order.Id"
+                           class="btn btn-sm btn-primary"
+                           title="Przydziel mechanika / zmień wycenę">
+                            <i class="fas fa-edit"></i> Edytuj
+                        </a>
+                        @if (order.EntryEstimatedCost.HasValue && order.VatRate.HasValue)
+                        {
+                            <a asp-action="AddAdditionalCost"
+                               asp-route-id="@order.Id"
+                               class="btn btn-sm btn-warning"
+                               title="Dodaj koszty dodatkowe">
+                                <i class="fas fa-plus-circle"></i> Koszty +
+                            </a>
+                        }
+                    </div>
                 </td>
             </tr>
         }

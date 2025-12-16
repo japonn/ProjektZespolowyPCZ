@@ -81,6 +81,7 @@ namespace WorkshopManager.Web.Controllers
 
             var order = _db.RepairOrders
                 .Include(o => o.Mechanic)
+                .Include(o => o.AdditionalCosts.OrderBy(ac => ac.AddedDate))
                 .FirstOrDefault(o => o.Id == id && o.ClientId == userId);
 
             if (order == null)
@@ -101,6 +102,7 @@ namespace WorkshopManager.Web.Controllers
             int userId = int.Parse(uid);
 
             var order = _db.RepairOrders
+                .Include(o => o.AdditionalCosts)
                 .FirstOrDefault(o => o.Id == id && o.ClientId == userId);
 
             if (order == null)
@@ -112,6 +114,15 @@ namespace WorkshopManager.Web.Controllers
             if (order.Status == RepairOrderStatusValue.PendingApproval)
             {
                 order.Status = RepairOrderStatusValue.Approved;
+
+                // Zaakceptowanie wszystkich niezaakceptowanych kosztów dodatkowych
+                var unacceptedCosts = order.AdditionalCosts.Where(ac => !ac.IsAccepted).ToList();
+                foreach (var cost in unacceptedCosts)
+                {
+                    cost.IsAccepted = true;
+                    cost.AcceptedDate = DateTime.Now;
+                }
+
                 _db.SaveChanges();
             }
 

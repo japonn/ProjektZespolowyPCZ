@@ -63,9 +63,16 @@
         <div class="col-md-6 mb-3">
             <label asp-for="VatRate" class="form-label"></label>
             <select asp-for="VatRate" class="form-select" id="vatRate">
-                <option value="">-- wybierz stawkę VAT --</option>
-                <option value="8">8%</option>
-                <option value="23">23%</option>
+                @if (Model.VatRate == 8)
+                {
+                    <option value="8" selected>8%</option>
+                    <option value="23">23%</option>
+                }
+                else
+                {
+                    <option value="8">8%</option>
+                    <option value="23" selected>23%</option>
+                }
             </select>
             <span asp-validation-for="VatRate" class="text-danger"></span>
         </div>
@@ -106,7 +113,7 @@
             const estimatedCost = parseFloat(document.getElementById('estimatedCost').value);
             const vatRate = parseInt(document.getElementById('vatRate').value);
 
-            if (isNaN(estimatedCost) || estimatedCost <= 0 || isNaN(vatRate)) {
+            if (isNaN(estimatedCost) || estimatedCost <= 0 || isNaN(vatRate) || vatRate ===  0) {
                 document.getElementById('nettoAmount').textContent = '-';
                 document.getElementById('vatAmount').textContent = '-';
                 document.getElementById('bruttoAmount').textContent = '-';
