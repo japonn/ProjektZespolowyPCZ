@@ -46,6 +46,10 @@ builder.Services.Configure<EmailSettings>(options =>
 
 builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 
+// Rejestracja serwisów statystyk
+builder.Services.AddScoped<WorkshopManager.Services.IMechanicStatisticsService, WorkshopManager.Services.MechanicStatisticsService>();
+builder.Services.AddScoped<WorkshopManager.Services.IPdfGeneratorService, WorkshopManager.Services.PdfGeneratorService>();
+
 // MVC + Razor Pages
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();

@@ -55,9 +55,9 @@ namespace WorkshopManager.Web.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(Input.Email);
-                if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+                if (user == null)
                 {
-                    // Don't reveal that the user does not exist or is not confirmed
+                    // Don't reveal that the user does not exist
                     return RedirectToPage("./ForgotPasswordConfirmation");
                 }
 
@@ -71,10 +71,37 @@ namespace WorkshopManager.Web.Areas.Identity.Pages.Account
                     values: new { area = "Identity", code },
                     protocol: Request.Scheme);
 
+                var emailBody = $@"
+                    <html>
+                    <body style='font-family: Arial, sans-serif;'>
+                        <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
+                            <h2 style='color: #333;'>Witaj!</h2>
+                            <p>Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta w systemie Workshop Manager.</p>
+                            <p>Aby zresetować hasło, kliknij poniższy link:</p>
+                            <p style='margin: 30px 0;'>
+                                <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'
+                                   style='background-color: #007bff; color: white; padding: 12px 24px;
+                                          text-decoration: none; border-radius: 4px; display: inline-block;'>
+                                    Zresetuj hasło
+                                </a>
+                            </p>
+                            <p style='color: #666; font-size: 14px;'>
+                                Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
+                                Twoje hasło pozostanie bez zmian.
+                            </p>
+                            <hr style='margin: 30px 0; border: none; border-top: 1px solid #ddd;'>
+                            <p style='color: #999; font-size: 12px;'>
+                                Pozdrawiamy,<br>
+                                Zespół Workshop Manager
+                            </p>
+                        </div>
+                    </body>
+                    </html>";
+
                 await _emailSender.SendEmailAsync(
                     Input.Email,
-                    "Reset Password",
-                    $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    "Reset hasła - Workshop Manager",
+                    emailBody);
 
                 return RedirectToPage("./ForgotPasswordConfirmation");
             }

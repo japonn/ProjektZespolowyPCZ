@@ -1,0 +1,181 @@
+@model WorkshopManager.ViewModels.MechanicsComparisonViewModel
+
+@{
+    ViewData["Title"] = "Porównanie Mechaników";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Porównanie Mechaników</h3>
+                    <form asp-action="CompareDownloadPdf" method="post" style="display: inline;">
+                        @foreach (var m in Model.Mechanics)
+                        {
+                            <input type="hidden" name="MechanicIds" value="@m.MechanicId" />
+                        }
+                        <input type="hidden" name="Period" value="@Model.Period.ToLower()" />
+                        <button type="submit" class="btn btn-light btn-sm">
+                            <i class="bi bi-download"></i> Pobierz PDF
+                        </button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Okres:</strong> @Model.Period</p>
+                            <p><strong>Od:</strong> @Model.StartDate.ToString("dd.MM.yyyy")</p>
+                            <p><strong>Do:</strong> @Model.EndDate.ToString("dd.MM.yyyy")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Liczba mechaników:</strong> @Model.Mechanics.Count</p>
+                        </div>
+                    </div>
+
+                    <!-- Podsumowanie ogólne -->
+                    <h4 class="mb-3">Podsumowanie ogólne</h4>
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Wszystkie zlecenia</h6>
+                                    <p class="display-6 text-primary">@Model.Mechanics.Sum(m => m.TotalOrders)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Zakończone</h6>
+                                    <p class="display-6">@Model.Mechanics.Sum(m => m.CompletedOrders)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Anulowane</h6>
+                                    <p class="display-6">@Model.Mechanics.Sum(m => m.CancelledOrders)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Łączne zarobki</h6>
+                                    <p class="display-6 text-success"><strong>@Model.Mechanics.Sum(m => m.TotalEarnings).ToString("C")</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ranking mechaników -->
+                    <h4 class="mb-3">🏆 Ranking mechaników</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-center" style="width: 50px;">#</th>
+                                    <th>Mechanik</th>
+                                    <th class="text-end">Wszystkie</th>
+                                    <th class="text-end">Zakończone</th>
+                                    <th class="text-end">Anulowane</th>
+                                    <th class="text-end">W trakcie</th>
+                                    <th class="text-end">Zarobki</th>
+                                    <th class="text-end">% ukończenia</th>
+                                    <th class="text-end">Średnia/zlecenie</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int position = 1;
+                                    foreach (var mechanic in Model.Mechanics)
+                                    {
+                                        var rowClass = position <= 3 ? "table-warning" : "";
+                                        var medal = position == 1 ? "🥇" : position == 2 ? "🥈" : position == 3 ? "🥉" : "";
+
+                                        <tr class="@rowClass">
+                                            <td class="text-center fw-bold">@medal @position</td>
+                                            <td>
+                                                <strong>@mechanic.MechanicFullName</strong>
+                                                <br /><small class="text-muted">Zatrudniony: @mechanic.EmploymentDate.ToString("dd.MM.yyyy")</small>
+                                            </td>
+                                            <td class="text-end">@mechanic.TotalOrders</td>
+                                            <td class="text-end">
+                                                <span class="badge bg-success">@mechanic.CompletedOrders</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="badge bg-danger">@mechanic.CancelledOrders</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="badge bg-warning text-dark">@mechanic.InProgressOrders</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <strong class="text-success">@mechanic.TotalEarnings.ToString("C")</strong>
+                                            </td>
+                                            <td class="text-end">@mechanic.CompletionRate.ToString("F1")%</td>
+                                            <td class="text-end">@mechanic.AverageEarningsPerOrder.ToString("C")</td>
+                                        </tr>
+
+                                        position++;
+                                    }
+                                }
+                            </tbody>
+                            <tfoot class="table-secondary">
+                                <tr>
+                                    <th colspan="2">SUMA / ŚREDNIA</th>
+                                    <th class="text-end">@Model.Mechanics.Sum(m => m.TotalOrders)</th>
+                                    <th class="text-end">@Model.Mechanics.Sum(m => m.CompletedOrders)</th>
+                                    <th class="text-end">@Model.Mechanics.Sum(m => m.CancelledOrders)</th>
+                                    <th class="text-end">@Model.Mechanics.Sum(m => m.InProgressOrders)</th>
+                                    <th class="text-end"><strong>@Model.Mechanics.Sum(m => m.TotalEarnings).ToString("C")</strong></th>
+                                    <th class="text-end">@Model.Mechanics.Average(m => m.CompletionRate).ToString("F1")%</th>
+                                    <th class="text-end">@Model.Mechanics.Average(m => m.AverageEarningsPerOrder).ToString("C")</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- TOP 3 -->
+                    @if (Model.Mechanics.Any())
+                    {
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h4 class="mb-3">🏆 TOP 3 Najlepsi mechanicy</h4>
+                                @{
+                                    var top3 = Model.Mechanics.Take(3).ToList();
+                                    for (int i = 0; i < top3.Count; i++)
+                                    {
+                                        var m = top3[i];
+                                        var badgeClass = i == 0 ? "bg-warning" : i == 1 ? "bg-secondary" : "bg-danger";
+
+                                        <div class="alert alert-success" role="alert">
+                                            <h5>
+                                                <span class="badge @badgeClass">@(i + 1)</span>
+                                                @m.MechanicFullName
+                                            </h5>
+                                            <p class="mb-0">
+                                                <strong class="text-success">@m.TotalEarnings.ToString("C")</strong> z @m.CompletedOrders zakończonych zleceń
+                                                (@m.CompletionRate.ToString("F1")% współczynnik ukończenia)
+                                            </p>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mt-4">
+                        <a asp-action="Compare" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Powrót do porównywania
+                        </a>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-house"></i> Strona główna statystyk
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

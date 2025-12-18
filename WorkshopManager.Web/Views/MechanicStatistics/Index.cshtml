@@ -1,0 +1,131 @@
+@model IEnumerable<WorkshopManager.Model.DataModels.Mechanic>
+
+@{
+    ViewData["Title"] = "Statystyki Mechaników";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Generowanie Statystyk Mechaników</h3>
+                    <a asp-action="Compare" class="btn btn-warning">
+                        <i class="bi bi-bar-chart-fill"></i> Porównaj mechaników
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="Generate" method="post" class="needs-validation" novalidate>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="mechanicId" class="form-label">Wybierz mechanika</label>
+                                <select class="form-select" id="mechanicId" name="MechanicId" required>
+                                    <option value="">-- Wybierz mechanika --</option>
+                                    @foreach (var mechanic in Model)
+                                    {
+                                        <option value="@mechanic.Id">@mechanic.FirstName @mechanic.LastName</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="period" class="form-label">Okres</label>
+                                <select class="form-select" id="period" name="Period" required>
+                                    <option value="day">Dzisiaj</option>
+                                    <option value="week">Ten tydzień</option>
+                                    <option value="month" selected>Ten miesiąc</option>
+                                    <option value="year">Ten rok</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-eye"></i> Podgląd statystyk
+                                    </button>
+                                    <button type="submit" formaction="@Url.Action("DownloadPdf")" class="btn btn-success">
+                                        <i class="bi bi-file-earmark-pdf"></i> Pobierz PDF
+                                    </button>
+                                    <a asp-controller="Owner" asp-action="Index" class="btn btn-secondary">
+                                        <i class="bi bi-arrow-left"></i> Powrót
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (Model.Any())
+            {
+                <div class="card mt-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Lista Mechaników</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Imię i Nazwisko</th>
+                                        <th>Data zatrudnienia</th>
+                                        <th>Akcje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var mechanic in Model)
+                                    {
+                                        <tr>
+                                            <td>@mechanic.Id</td>
+                                            <td>@mechanic.FirstName @mechanic.LastName</td>
+                                            <td>@mechanic.EmploymentDate.ToString("dd.MM.yyyy")</td>
+                                            <td>
+                                                <form asp-action="DownloadPdf" method="post" style="display: inline;">
+                                                    <input type="hidden" name="MechanicId" value="@mechanic.Id" />
+                                                    <input type="hidden" name="Period" value="month" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                                        <i class="bi bi-download"></i> PDF (miesiąc)
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Bootstrap form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
+}
