@@ -1,11 +1,59 @@
 @model IEnumerable<WorkshopManager.Model.DataModels.RepairOrder>
 @using WorkshopManager.Web.Helpers
+@using WorkshopManager.Model.DataModels
 
 @{
     ViewData["Title"] = "Zlecenia klientów";
+    var mechanics = ViewBag.Mechanics as IEnumerable<WorkshopManager.ViewModels.RepairOrders.MechanicListItemVM>;
+    var selectedMechanicId = ViewBag.SelectedMechanicId as int?;
+    var selectedStatus = ViewBag.SelectedStatus as int?;
 }
 
 <h2>Zlecenia klientów</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Filtrowanie</h5>
+        <form asp-action="Index" method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Mechanik</label>
+                <select name="mechanicId" class="form-select">
+                    <option value="">Wszyscy mechanicy</option>
+                    @if (mechanics != null)
+                    {
+                        foreach (var mechanic in mechanics)
+                        {
+                            <option value="@mechanic.Id" selected="@(selectedMechanicId == mechanic.Id)">
+                                @mechanic.FullName
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Wszystkie statusy</option>
+                    <option value="@((int)RepairOrderStatusValue.Created)" selected="@(selectedStatus == (int)RepairOrderStatusValue.Created)">Utworzone</option>
+                    <option value="@((int)RepairOrderStatusValue.PendingApproval)" selected="@(selectedStatus == (int)RepairOrderStatusValue.PendingApproval)">Do akceptacji</option>
+                    <option value="@((int)RepairOrderStatusValue.Approved)" selected="@(selectedStatus == (int)RepairOrderStatusValue.Approved)">Zaakceptowane</option>
+                    <option value="@((int)RepairOrderStatusValue.InProgress)" selected="@(selectedStatus == (int)RepairOrderStatusValue.InProgress)">W realizacji</option>
+                    <option value="@((int)RepairOrderStatusValue.ReadyForPickup)" selected="@(selectedStatus == (int)RepairOrderStatusValue.ReadyForPickup)">Gotowe do odbioru</option>
+                    <option value="@((int)RepairOrderStatusValue.Completed)" selected="@(selectedStatus == (int)RepairOrderStatusValue.Completed)">Zakończone</option>
+                    <option value="@((int)RepairOrderStatusValue.Cancelled)" selected="@(selectedStatus == (int)RepairOrderStatusValue.Cancelled)">Anulowane</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter"></i> Filtruj
+                </button>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Wyczyść
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
 
 <table class="table">
     <thead>
@@ -79,22 +127,38 @@
                 </td>
                 <td>@order.SubmissionDate.ToShortDateString()</td>
                 <td>
-                    <div class="btn-group" role="group">
-                        <a asp-action="Assign"
-                           asp-route-id="@order.Id"
-                           class="btn btn-sm btn-primary"
-                           title="Przydziel mechanika / zmień wycenę">
-                            <i class="fas fa-edit"></i> Edytuj
-                        </a>
-                        @if (order.EntryEstimatedCost.HasValue && order.VatRate.HasValue)
-                        {
-                            <a asp-action="AddAdditionalCost"
+                    <div class="btn-group-vertical" role="group">
+                        <div class="btn-group mb-1" role="group">
+                            <a asp-action="Details"
                                asp-route-id="@order.Id"
-                               class="btn btn-sm btn-warning"
-                               title="Dodaj koszty dodatkowe">
-                                <i class="fas fa-plus-circle"></i> Koszty +
+                               class="btn btn-sm btn-info"
+                               title="Podgląd szczegółów zlecenia">
+                                <i class="fas fa-eye"></i> Podgląd
                             </a>
-                        }
+                            <a asp-action="ChangeStatus"
+                               asp-route-id="@order.Id"
+                               class="btn btn-sm btn-secondary"
+                               title="Zmień status zlecenia">
+                                <i class="fas fa-sync-alt"></i> Status
+                            </a>
+                        </div>
+                        <div class="btn-group" role="group">
+                            <a asp-action="Assign"
+                               asp-route-id="@order.Id"
+                               class="btn btn-sm btn-primary"
+                               title="Przydziel mechanika / zmień wycenę">
+                                <i class="fas fa-edit"></i> Edytuj
+                            </a>
+                            @if (order.EntryEstimatedCost.HasValue && order.VatRate.HasValue)
+                            {
+                                <a asp-action="AddAdditionalCost"
+                                   asp-route-id="@order.Id"
+                                   class="btn btn-sm btn-warning"
+                                   title="Dodaj koszty dodatkowe">
+                                    <i class="fas fa-plus-circle"></i> Koszty +
+                                </a>
+                            }
+                        </div>
                     </div>
                 </td>
             </tr>

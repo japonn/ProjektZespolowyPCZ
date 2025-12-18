@@ -1,0 +1,75 @@
+@model WorkshopManager.ViewModels.RepairOrders.ChangeStatusVM
+@using WorkshopManager.Web.Helpers
+@using WorkshopManager.Model.DataModels
+
+@{
+    ViewData["Title"] = "Zmiana statusu zlecenia";
+}
+
+<h2>Zmiana statusu zlecenia</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Szczegóły zlecenia</h5>
+        <dl class="row">
+            <dt class="col-sm-3">Klient</dt>
+            <dd class="col-sm-9">@Model.ClientFullName</dd>
+
+            <dt class="col-sm-3">Numer rejestracyjny</dt>
+            <dd class="col-sm-9">@Model.RegistrationNumber</dd>
+
+            <dt class="col-sm-3">Aktualny status</dt>
+            <dd class="col-sm-9">@Html.Raw(StatusHelper.GetStatusBadgeHtml(Model.CurrentStatus))</dd>
+
+            <dt class="col-sm-3">Opis usterki</dt>
+            <dd class="col-sm-9">@Model.IssueDescription</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="ChangeStatus" method="post">
+    <input type="hidden" asp-for="OrderId" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Zmiana statusu</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label asp-for="NewStatus" class="form-label"></label>
+                <select asp-for="NewStatus" class="form-select">
+                    <option value="@((int)RepairOrderStatusValue.Created)">Utworzone</option>
+                    <option value="@((int)RepairOrderStatusValue.PendingApproval)">Do akceptacji</option>
+                    <option value="@((int)RepairOrderStatusValue.Approved)">Zaakceptowane</option>
+                    <option value="@((int)RepairOrderStatusValue.InProgress)">W realizacji</option>
+                    <option value="@((int)RepairOrderStatusValue.ReadyForPickup)">Gotowe do odbioru</option>
+                    <option value="@((int)RepairOrderStatusValue.Completed)">Zakończone</option>
+                    <option value="@((int)RepairOrderStatusValue.Cancelled)">Anulowane</option>
+                </select>
+                <span asp-validation-for="NewStatus" class="text-danger"></span>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Informacja:</strong>
+                <ul class="mb-0">
+                    <li>Zmiana statusu na "W realizacji" ustawi datę rozpoczęcia (jeśli nie była ustawiona)</li>
+                    <li>Zmiana statusu na "Zakończone" ustawi datę zakończenia (jeśli nie była ustawiona)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success btn-lg">
+        <i class="fas fa-save"></i> Zapisz zmianę statusu
+    </button>
+    <a asp-action="Index" class="btn btn-secondary btn-lg">
+        Anuluj
+    </a>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

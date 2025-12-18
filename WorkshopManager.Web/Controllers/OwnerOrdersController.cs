@@ -17,15 +17,44 @@ namespace WorkshopManager.Web.Controllers
             _db = db;
         }
 
-        // Lista wszystkich zleceń klientów
-        public IActionResult Index()
+        // Lista wszystkich zleceń klientów z filtrowaniem
+        public IActionResult Index(int? mechanicId, int? status)
         {
-            var orders = _db.RepairOrders
+            var ordersQuery = _db.RepairOrders
                 .Include(o => o.Client)
                 .Include(o => o.Mechanic)
                 .Include(o => o.AdditionalCosts)
+                .AsQueryable();
+
+            // Filtrowanie po mechaniku
+            if (mechanicId.HasValue && mechanicId.Value > 0)
+            {
+                ordersQuery = ordersQuery.Where(o => o.MechanicId == mechanicId.Value);
+            }
+
+            // Filtrowanie po statusie
+            if (status.HasValue)
+            {
+                ordersQuery = ordersQuery.Where(o => (int)o.Status == status.Value);
+            }
+
+            var orders = ordersQuery
                 .OrderByDescending(o => o.SubmissionDate)
                 .ToList();
+
+            // Przekazanie listy mechaników do dropdownu
+            ViewBag.Mechanics = _db.Mechanics
+                .OrderBy(m => m.LastName)
+                .ThenBy(m => m.FirstName)
+                .Select(m => new MechanicListItemVM
+                {
+                    Id = m.Id,
+                    FullName = $"{m.FirstName} {m.LastName}"
+                })
+                .ToList();
+
+            ViewBag.SelectedMechanicId = mechanicId;
+            ViewBag.SelectedStatus = status;
 
             return View(orders);
         }
@@ -209,6 +238,87 @@ namespace WorkshopManager.Web.Controllers
 
             TempData["Success"] = "Koszty dodatkowe zostały dodane. Klient musi je zaakceptować.";
             return RedirectToAction(nameof(Index));
+        }
+
+        // Formularz zmiany statusu zlecenia
+        [HttpGet]
+        public IActionResult ChangeStatus(int id)
+        {
+            var order = _db.RepairOrders
+                .Include(o => o.Client)
+                .FirstOrDefault(o => o.Id == id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            var model = new ChangeStatusVM
+            {
+                OrderId = order.Id,
+                ClientFullName = $"{order.Client.FirstName} {order.Client.LastName}",
+                RegistrationNumber = order.RegistrationNumber,
+                IssueDescription = order.EntryIssueDescription,
+                CurrentStatus = order.Status,
+                NewStatus = order.Status
+            };
+
+            return View(model);
+        }
+
+        // Zapis zmiany statusu
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ChangeStatus(ChangeStatusVM model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var order = _db.RepairOrders
+                .FirstOrDefault(o => o.Id == model.OrderId);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.Status = model.NewStatus;
+
+            // Ustawienie dat w zależności od statusu
+            if (model.NewStatus == RepairOrderStatusValue.InProgress && order.StartDate == null)
+            {
+                order.StartDate = DateTime.Now;
+            }
+            else if (model.NewStatus == RepairOrderStatusValue.Completed && order.EndDate == null)
+            {
+                order.EndDate = DateTime.Now;
+            }
+
+            _db.SaveChanges();
+
+            TempData["Success"] = "Status zlecenia został zmieniony.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Szczegółowy podgląd zlecenia
+        [HttpGet]
+        public IActionResult Details(int id)
+        {
+            var order = _db.RepairOrders
+                .Include(o => o.Client)
+                .Include(o => o.Mechanic)
+                .Include(o => o.AdditionalCosts.OrderBy(ac => ac.AddedDate))
+                .Include(o => o.Tasks)
+                .FirstOrDefault(o => o.Id == id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return View(order);
         }
     }
 }
