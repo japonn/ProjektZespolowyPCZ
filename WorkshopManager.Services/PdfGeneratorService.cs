@@ -9,6 +9,7 @@ public interface IPdfGeneratorService
 {
     byte[] GenerateMechanicStatisticsPdf(MechanicStatisticsViewModel statistics);
     byte[] GenerateMechanicsComparisonPdf(MechanicsComparisonViewModel comparison);
+    byte[] GenerateOrderReportPdf(OrderReportViewModel report);
 }
 
 public class PdfGeneratorService : IPdfGeneratorService
@@ -339,6 +340,235 @@ public class PdfGeneratorService : IPdfGeneratorService
         });
 
         return document.GeneratePdf();
+    }
+
+    public byte[] GenerateOrderReportPdf(OrderReportViewModel report)
+    {
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(10));
+
+                page.Header()
+                    .Column(col =>
+                    {
+                        col.Item().AlignCenter().Text($"RAPORT ZLECENIA #{report.OrderId}")
+                            .FontSize(18).Bold();
+                        col.Item().AlignCenter().Text($"Status: {GetStatusName(report.Status)}")
+                            .FontSize(12);
+                        col.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Blue.Darken2);
+                    });
+
+                page.Content()
+                    .PaddingVertical(10)
+                    .Column(col =>
+                    {
+                        // Informacje podstawowe
+                        col.Item().PaddingBottom(10).Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().Text("INFORMACJE O ZLECENIU").Bold().FontSize(12);
+                                c.Item().PaddingTop(5).Text($"Klient: {report.ClientFullName}");
+                                c.Item().Text($"Pojazd: {report.RegistrationNumber}");
+                                c.Item().Text($"Mechanik: {report.MechanicFullName}");
+                            });
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().Text("DATY").Bold().FontSize(12);
+                                c.Item().PaddingTop(5).Text($"Zgłoszenie: {report.SubmissionDate:dd.MM.yyyy HH:mm}");
+                                if (report.StartDate.HasValue)
+                                    c.Item().Text($"Rozpoczęcie: {report.StartDate.Value:dd.MM.yyyy HH:mm}");
+                                if (report.EndDate.HasValue)
+                                    c.Item().Text($"Zakończenie: {report.EndDate.Value:dd.MM.yyyy HH:mm}");
+                                if (report.StartDate.HasValue && report.EndDate.HasValue)
+                                {
+                                    var duration = report.EndDate.Value - report.StartDate.Value;
+                                    c.Item().Text($"Czas realizacji: {duration.Days} dni {duration.Hours} godz.").Bold();
+                                }
+                            });
+                        });
+
+                        col.Item().LineHorizontal(1).LineColor(Colors.Grey.Medium);
+
+                        // Opis problemu
+                        col.Item().PaddingVertical(10).Column(c =>
+                        {
+                            c.Item().Text("ZGŁOSZONY PROBLEM").Bold().FontSize(12);
+                            c.Item().PaddingTop(5).Text(report.IssueDescription);
+                        });
+
+                        col.Item().LineHorizontal(1).LineColor(Colors.Grey.Medium);
+
+                        // Wycena początkowa
+                        col.Item().PaddingVertical(10).Background(Colors.Green.Lighten4).Padding(10).Column(c =>
+                        {
+                            c.Item().Text("WYCENA POCZĄTKOWA").Bold().FontSize(12);
+                            c.Item().PaddingTop(5).Row(r =>
+                            {
+                                r.RelativeItem().Text($"Netto: {report.EntryEstimatedCostNetto:N2} PLN");
+                                r.RelativeItem().Text($"VAT ({report.VatRate}%): {(report.EntryEstimatedCostBrutto - report.EntryEstimatedCostNetto):N2} PLN");
+                                r.RelativeItem().Text($"Brutto: {report.EntryEstimatedCostBrutto:N2} PLN").Bold();
+                            });
+                        });
+
+                        // Wykonane naprawy
+                        if (report.RepairTasks.Any())
+                        {
+                            col.Item().PaddingTop(10).Column(c =>
+                            {
+                                c.Item().Text($"WYKONANE NAPRAWY ({report.RepairTasks.Count})").Bold().FontSize(12);
+                                c.Item().PaddingTop(5).Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.ConstantColumn(30);
+                                        columns.RelativeColumn(3);
+                                        columns.RelativeColumn(1);
+                                        columns.RelativeColumn(1);
+                                    });
+
+                                    table.Header(header =>
+                                    {
+                                        header.Cell().Element(CellStyle).Text("#");
+                                        header.Cell().Element(CellStyle).Text("Opis naprawy");
+                                        header.Cell().Element(CellStyle).AlignRight().Text("Koszt");
+                                        header.Cell().Element(CellStyle).AlignCenter().Text("Status");
+                                    });
+
+                                    int index = 1;
+                                    foreach (var task in report.RepairTasks)
+                                    {
+                                        table.Cell().Element(CellStyle).Text(index.ToString());
+                                        table.Cell().Element(CellStyle).Text(task.Description);
+                                        table.Cell().Element(CellStyle).AlignRight().Text($"{task.Cost:N2} PLN");
+                                        table.Cell().Element(CellStyle).AlignCenter().Text(task.IsCompleted ? "Ukończone" : "W trakcie");
+                                        index++;
+                                    }
+
+                                    table.Cell().ColumnSpan(2).Element(CellStyle).Background(Colors.Grey.Lighten3).Text("SUMA:").Bold();
+                                    table.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).AlignRight().Text($"{report.TotalNettoRepairTasks:N2} PLN").Bold();
+                                    table.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3);
+                                });
+                            });
+                        }
+
+                        // Koszty dodatkowe
+                        if (report.AdditionalCosts.Any())
+                        {
+                            col.Item().PaddingTop(10).Column(c =>
+                            {
+                                c.Item().Text($"KOSZTY DODATKOWE ({report.AdditionalCosts.Count})").Bold().FontSize(12);
+                                c.Item().PaddingTop(5).Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.ConstantColumn(30);
+                                        columns.RelativeColumn(3);
+                                        columns.RelativeColumn(1);
+                                        columns.RelativeColumn(1);
+                                        columns.RelativeColumn(1);
+                                    });
+
+                                    table.Header(header =>
+                                    {
+                                        header.Cell().Element(CellStyle).Text("#");
+                                        header.Cell().Element(CellStyle).Text("Opis");
+                                        header.Cell().Element(CellStyle).AlignRight().Text("Koszt");
+                                        header.Cell().Element(CellStyle).AlignCenter().Text("Data");
+                                        header.Cell().Element(CellStyle).AlignCenter().Text("Status");
+                                    });
+
+                                    int index = 1;
+                                    foreach (var cost in report.AdditionalCosts)
+                                    {
+                                        var bgColor = cost.IsAccepted ? Colors.White : Colors.Grey.Lighten3;
+                                        table.Cell().Element(CellStyle).Background(bgColor).Text(index.ToString());
+                                        table.Cell().Element(CellStyle).Background(bgColor).Text(cost.Description);
+                                        table.Cell().Element(CellStyle).Background(bgColor).AlignRight().Text($"{cost.Cost:N2} PLN");
+                                        table.Cell().Element(CellStyle).Background(bgColor).AlignCenter().Text($"{cost.AddedDate:dd.MM.yyyy}");
+                                        table.Cell().Element(CellStyle).Background(bgColor).AlignCenter().Text(cost.IsAccepted ? "Zaakceptowane" : "Odrzucone");
+                                        index++;
+                                    }
+
+                                    table.Cell().ColumnSpan(2).Element(CellStyle).Background(Colors.Grey.Lighten3).Text("SUMA ZAAKCEPTOWANYCH:").Bold();
+                                    table.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).AlignRight().Text($"{report.TotalNettoAdditionalCosts:N2} PLN").Bold();
+                                    table.Cell().ColumnSpan(2).Element(CellStyle).Background(Colors.Grey.Lighten3);
+                                });
+                            });
+                        }
+
+                        // Podsumowanie finansowe
+                        col.Item().PaddingTop(15).Background(Colors.Blue.Lighten4).Padding(10).Column(c =>
+                        {
+                            c.Item().Text("PODSUMOWANIE FINANSOWE").Bold().FontSize(14);
+                            c.Item().PaddingTop(5).Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(3);
+                                    columns.RelativeColumn(1);
+                                });
+
+                                table.Cell().Text("Wycena początkowa (netto):").FontSize(10);
+                                table.Cell().AlignRight().Text($"{report.EntryEstimatedCostNetto:N2} PLN").FontSize(10);
+
+                                if (report.RepairTasks.Any())
+                                {
+                                    table.Cell().Text("Wykonane naprawy (netto):").FontSize(10);
+                                    table.Cell().AlignRight().Text($"+ {report.TotalNettoRepairTasks:N2} PLN").FontSize(10);
+                                }
+
+                                if (report.AdditionalCosts.Any(ac => ac.IsAccepted))
+                                {
+                                    table.Cell().Text("Koszty dodatkowe zaakceptowane (netto):").FontSize(10);
+                                    table.Cell().AlignRight().Text($"+ {report.TotalNettoAdditionalCosts:N2} PLN").FontSize(10);
+                                }
+
+                                table.Cell().Background(Colors.Grey.Lighten3).Padding(3).Text("Suma netto:").Bold().FontSize(11);
+                                table.Cell().Background(Colors.Grey.Lighten3).Padding(3).AlignRight().Text($"{report.TotalNetto:N2} PLN").Bold().FontSize(11);
+
+                                table.Cell().Text($"VAT ({report.VatRate}%):").FontSize(10);
+                                table.Cell().AlignRight().Text($"{report.TotalVat:N2} PLN").FontSize(10);
+
+                                table.Cell().Background(Colors.Green.Darken1).Padding(5).Text("RAZEM DO ZAPŁATY (brutto):").Bold().FontSize(12).FontColor(Colors.White);
+                                table.Cell().Background(Colors.Green.Darken1).Padding(5).AlignRight().Text($"{report.TotalBrutto:N2} PLN").Bold().FontSize(14).FontColor(Colors.White);
+                            });
+                        });
+                    });
+
+                page.Footer()
+                    .AlignCenter()
+                    .Text(text =>
+                    {
+                        text.Span("Strona ");
+                        text.CurrentPageNumber();
+                        text.Span(" • Wygenerowano: ");
+                        text.Span($"{DateTime.Now:dd.MM.yyyy HH:mm}");
+                    });
+            });
+        });
+
+        return document.GeneratePdf();
+    }
+
+    private string GetStatusName(Model.DataModels.RepairOrderStatusValue status)
+    {
+        return status switch
+        {
+            Model.DataModels.RepairOrderStatusValue.Created => "Utworzone",
+            Model.DataModels.RepairOrderStatusValue.PendingApproval => "Do akceptacji",
+            Model.DataModels.RepairOrderStatusValue.Approved => "Zaakceptowane",
+            Model.DataModels.RepairOrderStatusValue.InProgress => "W realizacji",
+            Model.DataModels.RepairOrderStatusValue.ReadyForPickup => "Gotowe do odbioru",
+            Model.DataModels.RepairOrderStatusValue.Completed => "Zakończone",
+            Model.DataModels.RepairOrderStatusValue.Cancelled => "Anulowane",
+            _ => status.ToString()
+        };
     }
 
     private static IContainer HeaderStyle(IContainer container)

@@ -142,7 +142,7 @@
                                 <i class="fas fa-sync-alt"></i> Status
                             </a>
                         </div>
-                        <div class="btn-group" role="group">
+                        <div class="btn-group mb-1" role="group">
                             <a asp-action="Assign"
                                asp-route-id="@order.Id"
                                class="btn btn-sm btn-primary"
@@ -159,6 +159,17 @@
                                 </a>
                             }
                         </div>
+                        @if (order.Status == RepairOrderStatusValue.Completed)
+                        {
+                            <div class="btn-group" role="group">
+                                <a asp-action="Report"
+                                   asp-route-id="@order.Id"
+                                   class="btn btn-sm btn-success"
+                                   title="Raport zlecenia">
+                                    <i class="fas fa-file-alt"></i> Raport zlecenia
+                                </a>
+                            </div>
+                        }
                     </div>
                 </td>
             </tr>

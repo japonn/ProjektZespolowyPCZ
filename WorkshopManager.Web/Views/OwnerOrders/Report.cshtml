@@ -1,0 +1,357 @@
+@model WorkshopManager.ViewModels.OrderReportViewModel
+@using WorkshopManager.Web.Helpers
+@using WorkshopManager.Model.DataModels
+
+@{
+    ViewData["Title"] = $"Raport zlecenia #{Model.OrderId}";
+}
+
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>Raport zlecenia #@Model.OrderId</h2>
+                <div class="no-print">
+                    <a asp-action="DownloadReportPdf" asp-route-id="@Model.OrderId" class="btn btn-danger me-2">
+                        <i class="fas fa-file-pdf"></i> Pobierz PDF
+                    </a>
+                    <button onclick="window.print()" class="btn btn-primary me-2">
+                        <i class="fas fa-print"></i> Drukuj
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Powrót do listy
+                    </a>
+                </div>
+            </div>
+            <hr />
+        </div>
+    </div>
+
+    <!-- Informacje podstawowe -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Informacje o zleceniu</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th style="width: 40%;">Numer zlecenia:</th>
+                            <td><strong>#@Model.OrderId</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Klient:</th>
+                            <td>@Model.ClientFullName</td>
+                        </tr>
+                        <tr>
+                            <th>Pojazd:</th>
+                            <td>@Model.RegistrationNumber</td>
+                        </tr>
+                        <tr>
+                            <th>Mechanik:</th>
+                            <td>@Model.MechanicFullName</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>@Html.Raw(StatusHelper.GetStatusBadgeHtml(Model.Status))</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Daty</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th style="width: 40%;">Data zgłoszenia:</th>
+                            <td>@Model.SubmissionDate.ToString("dd.MM.yyyy HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <th>Data rozpoczęcia:</th>
+                            <td>
+                                @if (Model.StartDate.HasValue)
+                                {
+                                    @Model.StartDate.Value.ToString("dd.MM.yyyy HH:mm")
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Data zakończenia:</th>
+                            <td>
+                                @if (Model.EndDate.HasValue)
+                                {
+                                    @Model.EndDate.Value.ToString("dd.MM.yyyy HH:mm")
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                        </tr>
+                        @if (Model.StartDate.HasValue && Model.EndDate.HasValue)
+                        {
+                            var duration = Model.EndDate.Value - Model.StartDate.Value;
+                            <tr>
+                                <th>Czas realizacji:</th>
+                                <td><strong>@duration.Days dni @duration.Hours godz.</strong></td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opis usterki -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Zgłoszony problem</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">@Model.IssueDescription</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wycena początkowa -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Wycena początkowa</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Kwota netto:</strong> @Model.EntryEstimatedCostNetto?.ToString("N2") PLN
+                        </div>
+                        <div class="col-md-4">
+                            <strong>VAT (@Model.VatRate%):</strong> @((Model.EntryEstimatedCostBrutto - Model.EntryEstimatedCostNetto)?.ToString("N2")) PLN
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Kwota brutto:</strong> <span class="text-success fs-5">@Model.EntryEstimatedCostBrutto?.ToString("N2") PLN</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wykonane naprawy (Tasks) -->
+    @if (Model.RepairTasks.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0">Wykonane naprawy (@Model.RepairTasks.Count)</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 60%;">Opis naprawy</th>
+                                    <th style="width: 15%;" class="text-end">Koszt</th>
+                                    <th style="width: 20%;" class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int taskIndex = 1;
+                                }
+                                @foreach (var task in Model.RepairTasks)
+                                {
+                                    <tr>
+                                        <td>@taskIndex</td>
+                                        <td>@task.Description</td>
+                                        <td class="text-end">@task.Cost.ToString("N2") PLN</td>
+                                        <td class="text-center">
+                                            @if (task.IsCompleted)
+                                            {
+                                                <span class="badge bg-success">Ukończone</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">W trakcie</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    taskIndex++;
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-active">
+                                    <th colspan="2" class="text-end">Suma napraw:</th>
+                                    <th class="text-end">@Model.TotalNettoRepairTasks.ToString("N2") PLN</th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Koszty dodatkowe -->
+    @if (Model.AdditionalCosts.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">Koszty dodatkowe (@Model.AdditionalCosts.Count)</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 45%;">Opis</th>
+                                    <th style="width: 15%;" class="text-end">Koszt</th>
+                                    <th style="width: 15%;">Data dodania</th>
+                                    <th style="width: 20%;" class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int costIndex = 1;
+                                }
+                                @foreach (var cost in Model.AdditionalCosts)
+                                {
+                                    <tr class="@(cost.IsAccepted ? "" : "table-secondary")">
+                                        <td>@costIndex</td>
+                                        <td>@cost.Description</td>
+                                        <td class="text-end">@cost.Cost.ToString("N2") PLN</td>
+                                        <td>@cost.AddedDate.ToString("dd.MM.yyyy")</td>
+                                        <td class="text-center">
+                                            @if (cost.IsAccepted)
+                                            {
+                                                <span class="badge bg-success">
+                                                    Zaakceptowane
+                                                    @if (cost.AcceptedDate.HasValue)
+                                                    {
+                                                        <br />
+                                                        <small>@cost.AcceptedDate.Value.ToString("dd.MM.yyyy")</small>
+                                                    }
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark">Odrzucone</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    costIndex++;
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-active">
+                                    <th colspan="2" class="text-end">Suma zaakceptowanych kosztów dodatkowych:</th>
+                                    <th class="text-end">@Model.TotalNettoAdditionalCosts.ToString("N2") PLN</th>
+                                    <th colspan="2"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Podsumowanie finansowe -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Podsumowanie finansowe</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th style="width: 60%;">Wycena początkowa (netto):</th>
+                                <td class="text-end" style="width: 40%;">@Model.EntryEstimatedCostNetto?.ToString("N2") PLN</td>
+                            </tr>
+                            @if (Model.RepairTasks.Any())
+                            {
+                                <tr>
+                                    <th>Wykonane naprawy (netto):</th>
+                                    <td class="text-end">+ @Model.TotalNettoRepairTasks.ToString("N2") PLN</td>
+                                </tr>
+                            }
+                            @if (Model.AdditionalCosts.Any(ac => ac.IsAccepted))
+                            {
+                                <tr>
+                                    <th>Koszty dodatkowe zaakceptowane (netto):</th>
+                                    <td class="text-end">+ @Model.TotalNettoAdditionalCosts.ToString("N2") PLN</td>
+                                </tr>
+                            }
+                            <tr class="table-active">
+                                <th>Suma netto:</th>
+                                <th class="text-end">@Model.TotalNetto.ToString("N2") PLN</th>
+                            </tr>
+                            <tr>
+                                <th>VAT (@Model.VatRate%):</th>
+                                <td class="text-end">@Model.TotalVat.ToString("N2") PLN</td>
+                            </tr>
+                            <tr class="table-success">
+                                <th class="fs-4">RAZEM DO ZAPŁATY (brutto):</th>
+                                <th class="text-end fs-3 text-success">@Model.TotalBrutto.ToString("N2") PLN</th>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Przyciski akcji -->
+    <div class="row mb-4 no-print">
+        <div class="col-12">
+            <a asp-action="DownloadReportPdf" asp-route-id="@Model.OrderId" class="btn btn-danger btn-lg me-2">
+                <i class="fas fa-file-pdf"></i> Pobierz PDF
+            </a>
+            <button onclick="window.print()" class="btn btn-primary btn-lg me-2">
+                <i class="fas fa-print"></i> Drukuj
+            </button>
+            <a asp-action="Index" class="btn btn-secondary btn-lg">
+                <i class="fas fa-arrow-left"></i> Powrót do listy zleceń
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .container {
+            max-width: 100% !important;
+        }
+
+        .card {
+            page-break-inside: avoid;
+        }
+
+        body {
+            background: white !important;
+        }
+    }
+</style>

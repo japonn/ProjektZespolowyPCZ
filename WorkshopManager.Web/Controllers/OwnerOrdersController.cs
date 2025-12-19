@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkshopManager.DAL.EF;
 using WorkshopManager.Model.DataModels;
 using WorkshopManager.ViewModels.RepairOrders;
+using WorkshopManager.ViewModels;
 
 namespace WorkshopManager.Web.Controllers
 {
@@ -11,10 +12,12 @@ namespace WorkshopManager.Web.Controllers
     public class OwnerOrdersController : Controller
     {
         private readonly ApplicationDbContext _db;
+        private readonly WorkshopManager.Services.IPdfGeneratorService _pdfGenerator;
 
-        public OwnerOrdersController(ApplicationDbContext db)
+        public OwnerOrdersController(ApplicationDbContext db, WorkshopManager.Services.IPdfGeneratorService pdfGenerator)
         {
             _db = db;
+            _pdfGenerator = pdfGenerator;
         }
 
         // Lista wszystkich zleceń klientów z filtrowaniem
@@ -319,6 +322,174 @@ namespace WorkshopManager.Web.Controllers
             }
 
             return View(order);
+        }
+
+        // Raport zakończonego zlecenia
+        [HttpGet]
+        public IActionResult Report(int id)
+        {
+            var order = _db.RepairOrders
+                .Include(o => o.Client)
+                .Include(o => o.Mechanic)
+                .Include(o => o.AdditionalCosts.OrderBy(ac => ac.AddedDate))
+                .Include(o => o.Tasks)
+                .FirstOrDefault(o => o.Id == id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            // Raport dostępny tylko dla zakończonych zleceń
+            if (order.Status != RepairOrderStatusValue.Completed)
+            {
+                TempData["Error"] = "Raport dostępny tylko dla zakończonych zleceń.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Przygotowanie modelu raportu
+            var entryNetto = order.EntryEstimatedCost ?? 0;
+            var vatRate = order.VatRate ?? 0;
+            var entryVat = (entryNetto * vatRate) / 100;
+            var entryBrutto = entryNetto + entryVat;
+
+            var tasksNetto = order.Tasks?.Sum(t => t.Cost) ?? 0;
+            var additionalCostsNetto = order.AdditionalCosts?
+                .Where(ac => ac.IsAccepted)
+                .Sum(ac => ac.Cost) ?? 0;
+
+            var totalNetto = entryNetto + tasksNetto + additionalCostsNetto;
+            var totalVat = (totalNetto * vatRate) / 100;
+            var totalBrutto = totalNetto + totalVat;
+
+            var model = new OrderReportViewModel
+            {
+                OrderId = order.Id,
+                ClientFullName = $"{order.Client.FirstName} {order.Client.LastName}",
+                RegistrationNumber = order.RegistrationNumber,
+                MechanicFullName = order.Mechanic != null
+                    ? $"{order.Mechanic.FirstName} {order.Mechanic.LastName}"
+                    : "Nieprzydzielony",
+                IssueDescription = order.EntryIssueDescription,
+                Status = order.Status,
+                SubmissionDate = order.SubmissionDate,
+                StartDate = order.StartDate,
+                EndDate = order.EndDate,
+
+                EntryEstimatedCostNetto = entryNetto,
+                VatRate = vatRate,
+                EntryEstimatedCostBrutto = entryBrutto,
+
+                RepairTasks = order.Tasks?.Select(t => new RepairTaskItem
+                {
+                    Description = t.Description ?? "Brak opisu",
+                    Cost = t.Cost,
+                    IsCompleted = t.IsCompleted
+                }).ToList() ?? new List<RepairTaskItem>(),
+
+                AdditionalCosts = order.AdditionalCosts?.Select(ac => new AdditionalCostItem
+                {
+                    Description = ac.Description,
+                    Cost = ac.Cost,
+                    AddedDate = ac.AddedDate,
+                    IsAccepted = ac.IsAccepted,
+                    AcceptedDate = ac.AcceptedDate
+                }).ToList() ?? new List<AdditionalCostItem>(),
+
+                TotalNettoRepairTasks = tasksNetto,
+                TotalNettoAdditionalCosts = additionalCostsNetto,
+                TotalNetto = totalNetto,
+                TotalVat = totalVat,
+                TotalBrutto = totalBrutto
+            };
+
+            return View(model);
+        }
+
+        // Pobieranie raportu jako PDF
+        [HttpGet]
+        public IActionResult DownloadReportPdf(int id)
+        {
+            var order = _db.RepairOrders
+                .Include(o => o.Client)
+                .Include(o => o.Mechanic)
+                .Include(o => o.AdditionalCosts.OrderBy(ac => ac.AddedDate))
+                .Include(o => o.Tasks)
+                .FirstOrDefault(o => o.Id == id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            // PDF dostępny tylko dla zakończonych zleceń
+            if (order.Status != RepairOrderStatusValue.Completed)
+            {
+                TempData["Error"] = "PDF dostępny tylko dla zakończonych zleceń.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Przygotowanie modelu raportu (ten sam kod co w Report)
+            var entryNetto = order.EntryEstimatedCost ?? 0;
+            var vatRate = order.VatRate ?? 0;
+            var entryVat = (entryNetto * vatRate) / 100;
+            var entryBrutto = entryNetto + entryVat;
+
+            var tasksNetto = order.Tasks?.Sum(t => t.Cost) ?? 0;
+            var additionalCostsNetto = order.AdditionalCosts?
+                .Where(ac => ac.IsAccepted)
+                .Sum(ac => ac.Cost) ?? 0;
+
+            var totalNetto = entryNetto + tasksNetto + additionalCostsNetto;
+            var totalVat = (totalNetto * vatRate) / 100;
+            var totalBrutto = totalNetto + totalVat;
+
+            var model = new OrderReportViewModel
+            {
+                OrderId = order.Id,
+                ClientFullName = $"{order.Client.FirstName} {order.Client.LastName}",
+                RegistrationNumber = order.RegistrationNumber,
+                MechanicFullName = order.Mechanic != null
+                    ? $"{order.Mechanic.FirstName} {order.Mechanic.LastName}"
+                    : "Nieprzydzielony",
+                IssueDescription = order.EntryIssueDescription,
+                Status = order.Status,
+                SubmissionDate = order.SubmissionDate,
+                StartDate = order.StartDate,
+                EndDate = order.EndDate,
+
+                EntryEstimatedCostNetto = entryNetto,
+                VatRate = vatRate,
+                EntryEstimatedCostBrutto = entryBrutto,
+
+                RepairTasks = order.Tasks?.Select(t => new RepairTaskItem
+                {
+                    Description = t.Description ?? "Brak opisu",
+                    Cost = t.Cost,
+                    IsCompleted = t.IsCompleted
+                }).ToList() ?? new List<RepairTaskItem>(),
+
+                AdditionalCosts = order.AdditionalCosts?.Select(ac => new AdditionalCostItem
+                {
+                    Description = ac.Description,
+                    Cost = ac.Cost,
+                    AddedDate = ac.AddedDate,
+                    IsAccepted = ac.IsAccepted,
+                    AcceptedDate = ac.AcceptedDate
+                }).ToList() ?? new List<AdditionalCostItem>(),
+
+                TotalNettoRepairTasks = tasksNetto,
+                TotalNettoAdditionalCosts = additionalCostsNetto,
+                TotalNetto = totalNetto,
+                TotalVat = totalVat,
+                TotalBrutto = totalBrutto
+            };
+
+            // Generuj PDF
+            var pdfBytes = _pdfGenerator.GenerateOrderReportPdf(model);
+            var fileName = $"Raport_Zlecenia_{order.Id}_{DateTime.Now:yyyyMMdd}.pdf";
+
+            return File(pdfBytes, "application/pdf", fileName);
         }
     }
 }
