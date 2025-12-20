@@ -2,45 +2,123 @@
     ViewData["Title"] = "Panel Właściciela";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h1>Jesteś zalogowany jako: Owner</h1>
-                    <p class="lead mt-3">Witaj, @User.Identity?.Name!</p>
-                    <a asp-controller="Owner"
-                        asp-action="Clients"
-                        class="btn btn-primary mt-4">
-                        Zobacz listę klientów
-                    </a>
-                    <a asp-controller="Mechanic"
-                        asp-action="Create"
-                        class="btn btn-primary mt-3">
-                        Dodaj mechanika
-                    </a>
-                    <a asp-controller="Mechanic"
-                        asp-action="List"
-                        class="btn btn-secondary mt-2">
-                        Lista mechaników
-                    </a>
-                    <a asp-controller="OwnerOrders"
-                       asp-action="Index"
-                       class="btn btn-outline-primary mt-3">
-                        Zlecenia od klientów
-                    </a>
-                    <a asp-controller="MechanicStatistics"
-                       asp-action="Index"
-                       class="btn btn-info mt-3">
-                        Statystyki mechaników
-                    </a>
-                    <a asp-controller="MechanicStatistics"
-                       asp-action="Compare"
-                       class="btn btn-warning mt-2">
-                        Porównaj mechaników
-                    </a>
-                </div>
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-gradient text-white p-4 rounded shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h1 class="mb-2"><i class="fas fa-crown me-2"></i>Panel Właściciela</h1>
+                <p class="mb-0 fs-5">Witaj, <strong>@User.Identity?.Name</strong>!</p>
             </div>
         </div>
     </div>
+
+    <!-- Menu Cards -->
+    <div class="row g-4 justify-content-center">
+        <!-- Klienci -->
+        <div class="col-sm-6 col-md-4">
+            <a asp-controller="Owner" asp-action="Clients" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-users fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Lista klientów</h5>
+                        <p class="card-text text-muted small">Przeglądaj i zarządzaj klientami</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Zlecenia -->
+        <div class="col-sm-6 col-md-4">
+            <a asp-controller="OwnerOrders" asp-action="Index" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-clipboard-list fa-3x text-success"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Zlecenia</h5>
+                        <p class="card-text text-muted small">Zobacz wszystkie zlecenia</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Dodaj mechanika -->
+        <div class="col-sm-6 col-md-4">
+            <a asp-controller="Mechanic" asp-action="Create" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-user-plus fa-3x text-info"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Dodaj mechanika</h5>
+                        <p class="card-text text-muted small">Zarejestruj nowego pracownika</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Lista mechaników -->
+        <div class="col-sm-6 col-md-4">
+            <a asp-controller="Mechanic" asp-action="List" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-user-cog fa-3x text-secondary"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Lista mechaników</h5>
+                        <p class="card-text text-muted small">Przegląd wszystkich mechaników</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Statystyki -->
+        <div class="col-sm-6 col-md-4">
+            <a asp-controller="MechanicStatistics" asp-action="Index" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-chart-line fa-3x text-warning"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Statystyki</h5>
+                        <p class="card-text text-muted small">Wydajność mechaników</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Porównaj mechaników -->
+        <div class="col-sm-6 col-md-4">
+            <a asp-controller="MechanicStatistics" asp-action="Compare" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-balance-scale fa-3x text-danger"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Porównaj</h5>
+                        <p class="card-text text-muted small">Porównanie mechaników</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
 </div>
+
+<style>
+    .hover-lift {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
+    }
+
+    .card a:hover {
+        text-decoration: none;
+    }
+</style>
